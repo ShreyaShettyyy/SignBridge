@@ -1,0 +1,2 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[28],{395:function(n,o,r){"use strict";r.r(o),r.d(o,"randomBackgroundImage",function(){return e});var e=function(n,o){n=document.querySelector(n);n&&(o=o[Math.floor(Math.random()*o.length)],n.style.backgroundImage="url('"+o+"')")}}}]);
+//# sourceMappingURL=28.1e3de932d29ea41816bb.js.map

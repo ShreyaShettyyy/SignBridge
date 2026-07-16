@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Deadline Tracker - Student Portal</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i data-lucide="calendar"></i>
+                </div>
+                <span class="logo-text">TaskTrack</span>
+            </div>
+
+            <div class="sidebar-stats">
+                <span class="stats-title">Overview</span>
+                <div class="stat-card">
+                    <div class="stat-icon urgent">
+                        <i data-lucide="alert-triangle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Urgent Tasks</span>
+                        <h3 id="stat-urgent">0</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon pending">
+                        <i data-lucide="clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Pending</span>
+                        <h3 id="stat-pending">0</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon completed">
+                        <i data-lucide="check-square"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Completed</span>
+                        <h3 id="stat-completed">0</h3>
+                    </div>
+                </div>
+                <div class="stat-card progress-overview-card">
+                    <div class="stat-icon progress-icon" style="background: rgba(154, 165, 228, 0.2); color: var(--text-primary);">
+                        <i data-lucide="percent"></i>
+                    </div>
+                    <div class="stat-info" style="width: 100%;">
+                        <span class="stat-label">Overall Progress</span>
+                        <div class="overall-progress-text-row" style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3 id="stat-overall-progress">0%</h3>
+                        </div>
+                        <div class="overall-progress-bar" style="height: 6px; background: rgba(0,0,0,0.06); border-radius: 4px; overflow: hidden; margin-top: 6px; position: relative;">
+                            <div id="stat-overall-progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--secondary), var(--primary)); border-radius: 4px; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Out of scope information warning panel -->
+            <div class="sidebar-disclaimer">
+                <span class="disclaimer-title">Offline Sandbox Mode</span>
+                <div class="disclaimer-item">
+                    <i data-lucide="bell-off"></i>
+                    <span>Email alerts disabled</span>
+                </div>
+                <div class="disclaimer-item">
+                    <i data-lucide="upload-cloud"></i>
+                    <span>File uploads disabled</span>
+                </div>
+                <div class="disclaimer-item">
+                    <i data-lucide="users"></i>
+                    <span>Single-user database</span>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="user-avatar">ST</div>
+                <div class="user-info">
+                    <span class="user-name">Guest Student</span>
+                    <span class="user-role">Hackathon Edition</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <header class="header">
+                <div class="header-title-container">
+                    <h1>Assignment Deadline Tracker</h1>
+                    <span class="header-subtitle">Track submission due dates by subject and urgency level</span>
+                </div>
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span>Local Sandbox Live</span>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <div class="deadline-layout">
+                    <!-- Left: Form Section -->
+                    <section class="glass-panel form-section">
+                        <div class="card-header">
+                            <h2>
+                                <i data-lucide="plus-circle"></i>
+                                Schedule Assignment
+                            </h2>
+                        </div>
+                        <div class="card-body">
+                            <form id="deadline-form" class="deadline-form">
+                                <div class="form-group">
+                                    <label for="assign-name">Assignment Name</label>
+                                    <input 
+                                        type="text" 
+                                        id="assign-name" 
+                                        placeholder="e.g., Physics Lab Report" 
+                                        required
+                                        maxlength="50"
+                                        class="form-control"
+                                    >
+                                </div>
+                                <div class="form-group">
+                                    <label for="assign-subject">Subject / Course</label>
+                                    <select id="assign-subject" class="form-control">
+                                        <option value="Data Structures with Algorithms">Data Structures with Algorithms</option>
+                                        <option value="Java">Java</option>
+                                        <option value="Machine Learning">Machine Learning</option>
+                                        <option value="Web Technologies">Web Technologies</option>
+                                        <option value="Software Engineering">Software Engineering</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="assign-due">Due Date & Time</label>
+                                    <input 
+                                        type="datetime-local" 
+                                        id="assign-due" 
+                                        required
+                                        class="form-control"
+                                    >
+                                </div>
+                                <div class="form-group">
+                                    <label for="assign-progress">Starting Progress: <span id="form-progress-val">0%</span></label>
+                                    <input 
+                                        type="range" 
+                                        id="assign-progress" 
+                                        min="0" 
+                                        max="100" 
+                                        step="10" 
+                                        value="0" 
+                                        class="form-control"
+                                        style="padding: 4px 10px; height: auto;"
+                                    >
+                                </div>
+                                <button type="submit" class="btn-action btn-action-primary">
+                                    <i data-lucide="plus"></i>
+                                    Add Deadline
+                                </button>
+                            </form>
+                        </div>
+                    </section>
+
+                    <!-- Right: List Section -->
+                    <section class="glass-panel list-section">
+                        <div class="deadline-filters-container">
+                            <div class="deadline-filters">
+                                <button class="filter-btn active" data-filter="all">All</button>
+                                <button class="filter-btn" data-filter="pending">Pending</button>
+                                <button class="filter-btn" data-filter="in-progress">In Progress</button>
+                                <button class="filter-btn" data-filter="completed">Completed</button>
+                            </div>
+                            <span class="sort-indicator">
+                                <i data-lucide="arrow-down-narrow-wide"></i> Sorted by Due Date
+                            </span>
+                        </div>
+
+                        <div id="deadline-list" class="deadline-list">
+                            <!-- Injected dynamically by app.js -->
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Script Entrypoint -->
+    <script src="app.js"></script>
+</body>
+</html>

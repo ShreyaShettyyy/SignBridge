@@ -1,0 +1,32 @@
+# Local Netlify folder
+.netlify
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# Project specific data files
+*.pickle
+*.p
+data/
+gestures/
+scratch/
+pretrained_dataset.json
+
+# Node
+node_modules/
+dist/
+build/
+.npm
+
+# IDEs
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+*.lnk
