@@ -19,7 +19,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  LogOut
+  LogOut,
+  Menu
 } from 'lucide-react';
 import SYNONYMS from './synonyms';
 
@@ -1076,6 +1077,7 @@ export default function App() {
   };
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 1024) return true;
     try {
       return localStorage.getItem('signbridge_sidebar_collapsed') === 'true';
     } catch (e) {
@@ -1091,6 +1093,13 @@ export default function App() {
       } catch (e) {}
       return next;
     });
+  };
+
+  const handleTabChange = (tabName) => {
+    setActiveTab(tabName);
+    if (window.innerWidth <= 1024) {
+      setIsSidebarCollapsed(true);
+    }
   };
 
   // Unified Dictionary items list (A-Z, 1-10, static words, and custom uploaded words)
@@ -1359,8 +1368,8 @@ export default function App() {
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(e => console.warn("Video auto-play blocked or failed:", e));
         videoRef.current.onloadedmetadata = () => {
-          videoRef.current.play();
           setIsCameraActive(true);
           startFrameProcessing();
         };
@@ -1507,8 +1516,25 @@ export default function App() {
 
   // Normalization
   const getNormalizedLandmarks = (handLandmarks) => {
-    const xList = handLandmarks.map(lm => lm.x);
-    const yList = handLandmarks.map(lm => lm.y);
+    let vw = 640;
+    let vh = 480;
+    if (videoRef.current && videoRef.current.videoWidth) {
+      vw = videoRef.current.videoWidth;
+      vh = videoRef.current.videoHeight;
+    }
+
+    // Convert landmarks to match the 4:3 aspect ratio the model was trained on
+    // This prevents aspect ratio distortion (e.g. from mobile portrait cameras)
+    const adjustedLandmarks = handLandmarks.map(lm => {
+      return {
+        x: lm.x,
+        y: lm.y * (vh / vw) * (4 / 3),
+        z: lm.z
+      };
+    });
+
+    const xList = adjustedLandmarks.map(lm => lm.x);
+    const yList = adjustedLandmarks.map(lm => lm.y);
 
     const minX = Math.min(...xList);
     const minY = Math.min(...yList);
@@ -1518,7 +1544,7 @@ export default function App() {
     const scale = Math.max(maxX - minX, maxY - minY, 0.0001);
 
     const features = [];
-    handLandmarks.forEach(lm => {
+    adjustedLandmarks.forEach(lm => {
       features.push((lm.x - minX) / scale);
       features.push((lm.y - minY) / scale);
     });
@@ -1530,10 +1556,23 @@ export default function App() {
   const predictKNN = (inputFeatures, k = 7) => {
     if (activeDataset.length === 0) return { label: '?', confidence: 0 };
 
+    let maxX1 = 0, maxX2 = 0;
+    for (let i = 0; i < 42 && i < inputFeatures.length; i += 2) {
+      if (inputFeatures[i] > maxX1) maxX1 = inputFeatures[i];
+    }
+    if (inputFeatures.length > 42) {
+      for (let i = 42; i < 84 && i < inputFeatures.length; i += 2) {
+        if (inputFeatures[i] > maxX2) maxX2 = inputFeatures[i];
+      }
+    }
+
     const mirroredFeatures = inputFeatures.map((val, idx) => {
       // If the value is exactly 0.0 for a missing hand, leave it as 0.0
       if (val === 0.0 && inputFeatures[idx - (idx % 2)] === 0.0) return val;
-      return idx % 2 === 0 ? 1.0 - val : val;
+      if (idx % 2 === 0) {
+        return (idx < 42 ? maxX1 : maxX2) - val;
+      }
+      return val;
     });
 
     // Make the model completely immune to MediaPipe randomly swapping the order of detected hands
@@ -1619,17 +1658,9 @@ export default function App() {
 
     results.multiHandLandmarks.forEach((landmarks, idx) => {
       const label = results.multiHandedness[idx]?.label;
-      if (window.innerWidth > 768) {
-        drawAdvancedHand(ctx, landmarks, label === 'Right');
-      } else {
-        ctx.fillStyle = 'rgba(6, 182, 212, 0.8)';
-        landmarks.forEach(lm => {
-          ctx.beginPath();
-          ctx.arc(lm.x * ctx.canvas.width, lm.y * ctx.canvas.height, 4, 0, 2*Math.PI);
-          ctx.fill();
-        });
-      }
+      drawAdvancedHand(ctx, landmarks, label === 'Right');
     });
+    
 
     let dataAux = [];
     const hand1 = results.multiHandLandmarks[0];
@@ -1901,6 +1932,11 @@ export default function App() {
     if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
     setIsPlaying(true);
     setCurrentPlaybackIndex(0);
+
+    // Auto-scroll on mobile to show animation without manual scrolling
+    if (window.innerWidth <= 1024 && avatarCanvasRef.current) {
+      avatarCanvasRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 
     const tokens = tokenizePhrase(textToTranslate);
     setPlaybackText(tokens);
@@ -2201,7 +2237,12 @@ export default function App() {
 
   return (
     <div className={`app-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-            {/* Sidebar navigation */}
+      {/* Mobile overlay */}
+      {!isSidebarCollapsed && (
+        <div className="mobile-sidebar-overlay" onClick={() => setIsSidebarCollapsed(true)}></div>
+      )}
+      
+      {/* Sidebar navigation */}
       <aside className="sidebar">
         <div className="logo-container">
           <div className="logo-icon" title="SignBridge">
@@ -2216,7 +2257,7 @@ export default function App() {
         <ul className="nav-links">
           <li 
             className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => handleTabChange('dashboard')}
             title={isSidebarCollapsed ? "Dashboard" : ""}
           >
             <Layers size={18} />
@@ -2224,9 +2265,7 @@ export default function App() {
           </li>
           <li 
             className={`nav-item ${activeTab === 'sign-to-speech' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('sign-to-speech');
-            }}
+            onClick={() => handleTabChange('sign-to-speech')}
             title={isSidebarCollapsed ? "Sign-to-Speech" : ""}
           >
             <Video size={18} />
@@ -2234,7 +2273,7 @@ export default function App() {
           </li>
           <li 
             className={`nav-item ${activeTab === 'text-to-sign' ? 'active' : ''}`}
-            onClick={() => setActiveTab('text-to-sign')}
+            onClick={() => handleTabChange('text-to-sign')}
             title={isSidebarCollapsed ? "Text-to-Sign" : ""}
           >
             <Speech size={18} />
@@ -2242,9 +2281,7 @@ export default function App() {
           </li>
           <li 
             className={`nav-item ${activeTab === 'gesture-studio' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('gesture-studio');
-            }}
+            onClick={() => handleTabChange('gesture-studio')}
             title={isSidebarCollapsed ? "Gesture Studio" : ""}
           >
             <Plus size={18} />
@@ -2252,7 +2289,7 @@ export default function App() {
           </li>
           <li 
             className={`nav-item ${activeTab === 'guide' ? 'active' : ''}`}
-            onClick={() => setActiveTab('guide')}
+            onClick={() => handleTabChange('guide')}
             title={isSidebarCollapsed ? "Sign Dictionary" : ""}
           >
             <BookOpen size={18} />
@@ -2297,6 +2334,12 @@ export default function App() {
       {/* Main content viewport */}
       <main className="main-content">
         <header className="header">
+          <div className="mobile-header-controls">
+            <button className="mobile-menu-btn" onClick={toggleSidebar} title="Open Menu">
+              <Menu size={24} />
+            </button>
+            <h1 className="mobile-header-logo">SignBridge</h1>
+          </div>
           <div className="header-title-container">
             <h1>
               {activeTab === 'dashboard' && 'Dashboard Overview'}

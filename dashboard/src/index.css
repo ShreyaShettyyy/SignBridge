@@ -1050,6 +1050,8 @@ h1, h2, h3, h4 {
   display: grid;
   grid-template-columns: 1.6fr 1fr;
   gap: 32px;
+  max-width: 1050px;
+  margin: 0 auto;
 }
 
 .record-instructions {
@@ -2284,188 +2286,6 @@ h1, h2, h3, h4 {
   .content-body { padding: 24px; }
 }
 
-@media (max-width: 768px) {
-  .sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-    padding: 16px;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    border-right: none;
-    border-bottom: 1px solid rgba(139, 92, 246, 0.12);
-  }
-  
-  .logo-container { margin-bottom: 0; }
-  
-  .nav-links {
-    flex-direction: row;
-    overflow-x: auto;
-    padding-bottom: 8px;
-    width: 100%;
-    gap: 12px;
-  }
-  
-  .nav-item {
-    padding: 8px 12px;
-    white-space: nowrap;
-    border-radius: 8px;
-  }
-  
-  .sidebar-footer {
-    display: none; /* Hide user profile on mobile nav to save space */
-  }
-
-  .portal-right-panel {
-    border-left: none;
-    padding: 0;
-  }
-
-  .hide-on-mobile {
-    display: none !important;
-  }
-
-  /* Make webcam and output panels more compact on mobile */
-  .prediction-box {
-    padding: 12px;
-    gap: 8px;
-  }
-  .prediction-value {
-    font-size: 32px !important;
-  }
-  .btn-action {
-    padding: 8px 10px !important;
-    font-size: 11px !important;
-  }
-  .translation-actions {
-    gap: 4px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .main-content {
-    margin-left: 0;
-    padding: 16px;
-  }
-  
-  .header {
-    padding: 0 16px;
-  }
-
-  .content-body {
-    padding: 16px;
-  }
-  
-  .dashboard-grid { grid-template-columns: 1fr; }
-  .toolkit-grid { grid-template-columns: 1fr; }
-  .portal-mini-stats { grid-template-columns: repeat(2, 1fr); }
-  
-  .dashboard-portal-container {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  
-  .portal-welcome-section, .portal-system-status {
-    display: none; /* Hide these to reduce newspaper layout density on mobile */
-  }
-  
-  .portal-left-panel {
-    padding: 0;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-  }
-  
-  .portal-right-panel {
-    gap: 8px;
-  }
-  
-  .webcam-container {
-    height: 55vh;
-    min-height: 350px;
-    width: 100%;
-    overflow: hidden;
-    position: relative;
-    border-radius: 16px;
-  }
-  
-  .webcam-feed, .webcam-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .hero-title {
-    font-size: 28px;
-  }
-  
-  /* Fix header subtitle overlap */
-  .header {
-    height: auto;
-    padding: 16px;
-    flex-wrap: wrap;
-  }
-  .header-subtitle {
-    display: none;
-  }
-  
-  /* Fix prediction value horizontal scroll */
-  .prediction-value {
-    font-size: 32px;
-    word-break: break-word;
-    white-space: normal;
-    height: auto;
-    text-align: center;
-    padding: 10px 0;
-    display: block;
-    line-height: 1.1;
-    width: 100%;
-    overflow-wrap: break-word;
-  }
-  
-  /* Fix Gesture Studio horizontal scroll */
-  .gesture-list {
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-  .gesture-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  
-  /* Fix Dictionary to be tabular on mobile */
-  .dictionary-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px !important;
-  }
-  .guide-card {
-    padding: 8px !important;
-  }
-  .guide-letter {
-    font-size: 16px !important;
-  }
-  .guide-card svg, .guide-card img {
-    width: 50px !important;
-    height: 50px !important;
-  }
-  
-  .record-gesture-btn {
-    width: 100% !important;
-    white-space: normal !important;
-    height: auto !important;
-    padding: 12px !important;
-    font-size: 14px !important;
-  }
-}
-
 .record-gesture-btn {
   background: linear-gradient(135deg, var(--secondary), var(--primary));
   height: 48px;
@@ -2473,3 +2293,255 @@ h1, h2, h3, h4 {
   flex-shrink: 0;
 }
 
+
+
+
+/* --- MOBILE RESPONSIVENESS PATCH (V4) --- */
+.mobile-header-controls {
+  display: none;
+}
+.mobile-sidebar-overlay {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  /* 1. Global & Layout */
+  body, .app-container {
+    overflow-x: hidden !important;
+    max-width: 100vw;
+  }
+  
+  .mobile-sidebar-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  /* 2. Navigation & Header */
+  .header {
+    padding: 12px 16px;
+    height: auto;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .mobile-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+  }
+  .mobile-menu-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 8px;
+  }
+  .mobile-header-logo {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0;
+  }
+  .header-title-container {
+    flex: 1 1 100%;
+    order: 3;
+  }
+  .system-status {
+    display: none !important;
+  }
+  
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 260px;
+    z-index: 1000;
+    transform: translateX(0);
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: var(--shadow-neon-strong);
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    border-right: none;
+  }
+  
+  .app-container.sidebar-collapsed .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .nav-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px;
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  .nav-item {
+    justify-content: flex-start !important;
+    padding: 12px 16px !important;
+    width: 100% !important;
+    height: auto !important;
+    white-space: normal !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    width: 100%;
+    padding: 16px;
+  }
+
+  .sidebar-toggle-btn {
+    display: none !important;
+  }
+
+  .sidebar-footer {
+    display: flex !important;
+  }
+
+  /* 3. Dashboard */
+  .dashboard-portal-container {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .portal-left-panel, .portal-right-panel {
+    width: 100% !important;
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .portal-system-status {
+    display: none !important;
+  }
+  .portal-mini-stats {
+    display: none !important;
+  }
+  .launcher-desc {
+    display: none !important;
+  }
+  
+  /* 4. Sign to Speech */
+  .webcam-layout {
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .webcam-container {
+    width: 100% !important;
+    aspect-ratio: 4/3 !important;
+    position: relative;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    min-height: 250px !important;
+  }
+  .webcam-feed, .webcam-canvas {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    object-fit: cover !important;
+  }
+  .output-sidebar {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+  }
+  .prediction-box {
+    margin-top: 10px;
+    padding: 16px;
+  }
+  
+  /* 5. Text to Sign */
+  .text-sign-container {
+    flex-direction: column;
+  }
+  .translator-input-panel, .visualizer-avatar-panel {
+    width: 100%;
+    min-height: auto;
+  }
+  
+  /* 6. Gesture Studio */
+  .studio-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 4px !important; /* Slight padding to reduce visual width and align with interface */
+    overflow-x: hidden !important; /* Eliminate horizontal scroll */
+  }
+  .studio-layout > div {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .dataset-table-container {
+    overflow-x: auto;
+    display: block;
+    white-space: nowrap;
+    width: 100%;
+  }
+  .dataset-table-container table {
+    width: 100%;
+    min-width: 500px;
+  }
+  .gesture-list {
+    flex-direction: column;
+  }
+  .gesture-card {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .record-gesture-btn {
+    width: 100% !important;
+    white-space: normal !important;
+    height: auto !important;
+    padding: 12px !important;
+    font-size: 14px !important;
+  }
+  .portal-greeting-desc {
+    display: none !important;
+  }
+  
+  /* 7. Sign Dictionary */
+  .dictionary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 4px !important;
+  }
+  .dictionary-card {
+    padding: 10px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .dictionary-card svg.card-image, .dictionary-card img.card-image {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1/1;
+  }
+  .guide-card {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    padding: 12px !important;
+  }
+}
