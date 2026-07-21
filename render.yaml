@@ -5,13 +5,7 @@ services:
     rootDir: backend
     buildCommand: npm install
     startCommand: npm start
-    disk:
-      name: sqlite-data
-      mountPath: /data
-      sizeGB: 1
     envVars:
-      - key: DB_PATH
-        value: /data/users.db
       - key: EMAIL_USER
         sync: false
       - key: EMAIL_PASS
