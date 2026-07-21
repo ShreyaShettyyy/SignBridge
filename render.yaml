@@ -3,8 +3,9 @@ services:
     name: signbridge-backend
     env: node
     plan: free
+    nodeVersion: 18.18.2
     rootDir: backend
-    buildCommand: npm install && npm rebuild sqlite3 --build-from-source
+    buildCommand: npm install
     startCommand: npm start
     envVars:
       - key: EMAIL_USER
