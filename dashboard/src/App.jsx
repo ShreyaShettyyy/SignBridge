@@ -865,16 +865,31 @@ export default function App() {
       return 'shreya.shetty@example.com';
     }
   });
-  const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
+  const [userFullName, setUserFullName] = useState(() => {
+    try {
+      return localStorage.getItem('signbridge_user_fullname') || '';
+    } catch (e) {
+      return '';
+    }
+  });
+  const [authMode, setAuthMode] = useState('login'); // 'login', 'register', 'forgot_password', 'verify_otp', 'reset_password'
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginErrors, setLoginErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [registerFullName, setRegisterFullName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
   const [registerErrors, setRegisterErrors] = useState({});
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetOtp, setResetOtp] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [resetErrors, setResetErrors] = useState({});
+  const [resetSuccessMsg, setResetSuccessMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Dashboard Instant Lookup state
   const [dashboardLookupWord, setDashboardLookupWord] = useState('');
@@ -935,9 +950,10 @@ export default function App() {
     setShowAddForm(false);
   };
 
-  const getNameFromEmail = (email) => {
-    if (!email) return "Guest User";
-    const namePart = email.split('@')[0];
+  const getDisplayName = () => {
+    if (userFullName) return userFullName;
+    if (!userEmail) return "Guest User";
+    const namePart = userEmail.split('@')[0];
     const cleanName = namePart.replace(/[._-]/g, ' ');
     return cleanName
       .split(' ')
@@ -954,35 +970,41 @@ export default function App() {
     return parts[0].slice(0, 2).toUpperCase();
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     const errors = {};
-    if (!loginEmail) {
-      errors.email = "Email address is required.";
-    }
-    if (!loginPassword) {
-      errors.password = "Password is required.";
-    }
+    if (!loginEmail) errors.email = "Email address is required.";
+    if (!loginPassword) errors.password = "Password is required.";
 
     if (Object.keys(errors).length > 0) {
       setLoginErrors(errors);
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      const users = JSON.parse(localStorage.getItem('signbridge_users') || '[]');
-      const user = users.find(u => u.email === loginEmail && u.password === loginPassword);
-      if (user) {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword })
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
         setLoginErrors({});
         setIsAuthenticated(true);
         setUserEmail(loginEmail);
+        setUserFullName(data.fullName || '');
         localStorage.setItem('signbridge_authenticated', 'true');
         localStorage.setItem('signbridge_user_email', loginEmail);
+        if (data.fullName) localStorage.setItem('signbridge_user_fullname', data.fullName);
       } else {
-        setLoginErrors({ email: "Invalid email or password." });
+        setLoginErrors({ email: data.error || "Invalid email or password." });
       }
     } catch (e) {
-      setLoginErrors({ email: "An error occurred during login." });
+      setLoginErrors({ email: "Network error occurred during login." });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -996,50 +1018,174 @@ export default function App() {
     return 'Weak';
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     const errors = {};
+    if (!registerFullName) errors.fullName = "Full Name is required.";
     if (!registerEmail) {
       errors.email = "Email address is required.";
     } else if (!/\S+@\S+\.\S+/.test(registerEmail)) {
       errors.email = "Please enter a valid email address.";
     }
-    if (!registerPassword) {
-      errors.password = "Password is required.";
-    }
-    if (registerPassword !== registerConfirmPassword) {
-      errors.confirmPassword = "Passwords do not match.";
-    }
+    if (!registerPassword) errors.password = "Password is required.";
+    if (registerPassword !== registerConfirmPassword) errors.confirmPassword = "Passwords do not match.";
 
     if (Object.keys(errors).length > 0) {
       setRegisterErrors(errors);
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      const users = JSON.parse(localStorage.getItem('signbridge_users') || '[]');
-      if (users.find(u => u.email === registerEmail)) {
-        setRegisterErrors({ email: "User already exists." });
-        return;
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName: registerFullName, email: registerEmail, password: registerPassword })
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setRegisterErrors({});
+        
+        // Clear registration form
+        setRegisterFullName('');
+        setRegisterEmail('');
+        setRegisterPassword('');
+        setRegisterConfirmPassword('');
+        
+        // Redirect back to sign in
+        setAuthMode('login');
+      } else {
+        setRegisterErrors({ email: data.error || "Registration failed." });
       }
-      users.push({ email: registerEmail, password: registerPassword });
-      localStorage.setItem('signbridge_users', JSON.stringify(users));
-      
-      setRegisterErrors({});
-      setIsAuthenticated(true);
-      setUserEmail(registerEmail);
-      localStorage.setItem('signbridge_authenticated', 'true');
-      localStorage.setItem('signbridge_user_email', registerEmail);
     } catch (e) {
-      setRegisterErrors({ email: "An error occurred during registration." });
+      setRegisterErrors({ email: "Network error occurred during registration." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!resetEmail) {
+      setResetErrors({ email: "Email is required." });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setResetSuccessMsg(data.message);
+        setResetErrors({});
+        setTimeout(() => {
+          setResetSuccessMsg('');
+          setAuthMode('verify_otp');
+        }, 2000);
+      } else {
+        setResetErrors({ email: data.error });
+      }
+    } catch (e) {
+      setResetErrors({ email: "Network error." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (!resetOtp) {
+      setResetErrors({ otp: "OTP is required." });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail, otp: resetOtp })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setResetSuccessMsg(data.message);
+        setResetErrors({});
+        setTimeout(() => {
+          setResetSuccessMsg('');
+          setAuthMode('reset_password');
+        }, 1500);
+      } else {
+        setResetErrors({ otp: data.error });
+      }
+    } catch (e) {
+      setResetErrors({ otp: "Network error." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    const errors = {};
+    if (!resetNewPassword) errors.newPassword = "Password is required.";
+    if (resetNewPassword !== resetConfirmPassword) errors.confirmPassword = "Passwords do not match.";
+    
+    if (Object.keys(errors).length > 0) {
+      setResetErrors(errors);
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail, otp: resetOtp, newPassword: resetNewPassword })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setResetSuccessMsg(data.message);
+        setResetErrors({});
+        setTimeout(() => {
+          setResetSuccessMsg('');
+          setAuthMode('login');
+          setResetEmail('');
+          setResetOtp('');
+          setResetNewPassword('');
+          setResetConfirmPassword('');
+        }, 2000);
+      } else {
+        setResetErrors({ newPassword: data.error });
+      }
+    } catch (e) {
+      setResetErrors({ newPassword: "Network error." });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    setAuthMode('login');
+    
+    // Clear all forms
+    setLoginEmail('');
+    setLoginPassword('');
+    setRegisterFullName('');
+    setRegisterEmail('');
+    setRegisterPassword('');
+    setRegisterConfirmPassword('');
+    setResetEmail('');
+    setResetOtp('');
+    setResetNewPassword('');
+    setResetConfirmPassword('');
+    
     try {
       localStorage.removeItem('signbridge_authenticated');
       localStorage.removeItem('signbridge_user_email');
+      localStorage.removeItem('signbridge_user_fullname');
     } catch (e) {}
   };
 
@@ -2064,12 +2210,19 @@ export default function App() {
           </div>
           
           <h2 className="login-title">
-            {authMode === 'login' ? 'Sign In to Your Workspace' : 'Create an Account'}
+            {authMode === 'login' ? 'Sign In to Your Workspace' : 
+             authMode === 'register' ? 'Create an Account' : 
+             authMode === 'forgot_password' ? 'Reset Password' :
+             authMode === 'verify_otp' ? 'Enter OTP' :
+             'Create New Password'}
           </h2>
           <p className="login-subtitle">
             {authMode === 'login' 
               ? 'Access Indian Sign Language translation tools & custom calibration studio.'
-              : 'Join to start using Indian Sign Language translation tools.'}
+              : authMode === 'register' ? 'Join to start using Indian Sign Language translation tools.'
+              : authMode === 'forgot_password' ? 'Enter your email to receive a One-Time Password.'
+              : authMode === 'verify_otp' ? 'Check your email for the 6-digit code.'
+              : 'Enter your new secure password below.'}
           </p>
 
           {authMode === 'login' ? (
@@ -2128,6 +2281,11 @@ export default function App() {
                     {loginErrors.password}
                   </span>
                 )}
+                <div style={{ textAlign: 'right', marginTop: '8px' }}>
+                  <span style={{ color: 'var(--primary)', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }} onClick={() => { setAuthMode('forgot_password'); setLoginErrors({}); }}>
+                    Forgot Password?
+                  </span>
+                </div>
               </div>
 
               <div className="form-group checkbox-group">
@@ -2150,8 +2308,27 @@ export default function App() {
                 Don't have an account? <span style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: '500' }} onClick={() => { setAuthMode('register'); setLoginErrors({}); }}>Sign Up</span>
               </div>
             </form>
-          ) : (
+          ) : authMode === 'register' ? (
             <form onSubmit={handleRegister} noValidate className="login-form">
+              {/* Register Full Name Field */}
+              <div className="form-group">
+                <label htmlFor="register-fullname">Full Name</label>
+                <input 
+                  type="text" 
+                  id="register-fullname" 
+                  name="fullname"
+                  placeholder="Enter your full name" 
+                  value={registerFullName}
+                  onChange={(e) => setRegisterFullName(e.target.value)}
+                  className={`login-input ${registerErrors.fullName ? 'input-error' : ''}`}
+                  autoComplete="name"
+                  required
+                />
+                {registerErrors.fullName && (
+                  <span className="error-message" aria-live="polite">{registerErrors.fullName}</span>
+                )}
+              </div>
+
               {/* Register Email Field */}
               <div className="form-group">
                 <label htmlFor="register-email">Email Address</label>
@@ -2229,6 +2406,74 @@ export default function App() {
                 Already have an account? <span style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: '500' }} onClick={() => { setAuthMode('login'); setRegisterErrors({}); }}>Sign In</span>
               </div>
             </form>
+          ) : authMode === 'forgot_password' ? (
+            <form onSubmit={handleForgotPassword} noValidate className="login-form">
+              {resetSuccessMsg && <div className="success-message" style={{ color: '#2ecc71', marginBottom: '10px', textAlign: 'center' }}>{resetSuccessMsg}</div>}
+              <div className="form-group">
+                <label htmlFor="reset-email">Email Address</label>
+                <input 
+                  type="email" id="reset-email" name="email" placeholder="Enter your email" 
+                  value={resetEmail} onChange={(e) => setResetEmail(e.target.value)}
+                  className={`login-input ${resetErrors.email ? 'input-error' : ''}`} required
+                />
+                {resetErrors.email && <span className="error-message">{resetErrors.email}</span>}
+              </div>
+              <button type="submit" className="btn-action btn-action-primary login-btn" disabled={isSubmitting}>
+                {isSubmitting ? 'Sending...' : 'Send OTP'}
+              </button>
+              <div style={{ marginTop: '15px', textAlign: 'center', fontSize: '14px', color: 'var(--text-muted)' }}>
+                Remember your password? <span style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: '500' }} onClick={() => { setAuthMode('login'); setResetErrors({}); }}>Sign In</span>
+              </div>
+            </form>
+          ) : authMode === 'verify_otp' ? (
+            <form onSubmit={handleVerifyOtp} noValidate className="login-form">
+              {resetSuccessMsg && <div className="success-message" style={{ color: '#2ecc71', marginBottom: '10px', textAlign: 'center' }}>{resetSuccessMsg}</div>}
+              <div className="form-group">
+                <label htmlFor="reset-otp">6-Digit OTP</label>
+                <input 
+                  type="text" id="reset-otp" name="otp" placeholder="Enter 6-digit OTP" 
+                  value={resetOtp} onChange={(e) => setResetOtp(e.target.value)}
+                  className={`login-input ${resetErrors.otp ? 'input-error' : ''}`} required
+                />
+                {resetErrors.otp && <span className="error-message">{resetErrors.otp}</span>}
+              </div>
+              <button type="submit" className="btn-action btn-action-primary login-btn" disabled={isSubmitting}>
+                {isSubmitting ? 'Verifying...' : 'Verify OTP'}
+              </button>
+              <div style={{ marginTop: '15px', textAlign: 'center', fontSize: '14px', color: 'var(--text-muted)' }}>
+                Didn't receive it? <span style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: '500' }} onClick={() => { setAuthMode('forgot_password'); setResetErrors({}); }}>Try Again</span>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleResetPassword} noValidate className="login-form">
+              {resetSuccessMsg && <div className="success-message" style={{ color: '#2ecc71', marginBottom: '10px', textAlign: 'center' }}>{resetSuccessMsg}</div>}
+              <div className="form-group">
+                <label htmlFor="reset-new-password">New Password</label>
+                <input 
+                  type="password" id="reset-new-password" name="newPassword" placeholder="Enter new password" 
+                  value={resetNewPassword} onChange={(e) => setResetNewPassword(e.target.value)}
+                  className={`login-input ${resetErrors.newPassword ? 'input-error' : ''}`} required
+                />
+                {resetNewPassword && (
+                  <div style={{ fontSize: '12px', marginTop: '4px', textAlign: 'right', color: getPasswordStrength(resetNewPassword) === 'Strong' ? '#2ecc71' : '#e74c3c' }}>
+                    Strength: {getPasswordStrength(resetNewPassword)}
+                  </div>
+                )}
+                {resetErrors.newPassword && <span className="error-message">{resetErrors.newPassword}</span>}
+              </div>
+              <div className="form-group">
+                <label htmlFor="reset-confirm-password">Confirm Password</label>
+                <input 
+                  type="password" id="reset-confirm-password" name="confirmPassword" placeholder="Confirm new password" 
+                  value={resetConfirmPassword} onChange={(e) => setResetConfirmPassword(e.target.value)}
+                  className={`login-input ${resetErrors.confirmPassword ? 'input-error' : ''}`} required
+                />
+                {resetErrors.confirmPassword && <span className="error-message">{resetErrors.confirmPassword}</span>}
+              </div>
+              <button type="submit" className="btn-action btn-action-primary login-btn" disabled={isSubmitting}>
+                {isSubmitting ? 'Updating...' : 'Reset Password'}
+              </button>
+            </form>
           )}
         </div>
       </div>
@@ -2299,10 +2544,10 @@ export default function App() {
 
         <div className="sidebar-footer" style={{ flexDirection: isSidebarCollapsed ? 'column' : 'row', gap: '12px', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div className="user-avatar" title={getNameFromEmail(userEmail)}>{getInitials(getNameFromEmail(userEmail))}</div>
+            <div className="user-avatar" title={getDisplayName()}>{getInitials(getDisplayName())}</div>
             {!isSidebarCollapsed && (
               <div className="user-info">
-                <span className="user-name">{getNameFromEmail(userEmail)}</span>
+                <span className="user-name">{getDisplayName()}</span>
                 <span className="user-role">SignBridge Studio</span>
               </div>
             )}
@@ -2373,7 +2618,7 @@ export default function App() {
                     <span className="portal-greeting-dot"></span>
                     ACTIVE WORKSPACE
                   </div>
-                  <h2 className="portal-greeting-title">Hello, {getNameFromEmail(userEmail)}</h2>
+                  <h2 className="portal-greeting-title">Hello, {getDisplayName()}</h2>
                   <p className="portal-greeting-desc">
                     Welcome back to SignBridge Studio. Your workspace is calibrated and ready.
                   </p>
