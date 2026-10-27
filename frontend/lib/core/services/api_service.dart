@@ -1,0 +1,447 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+
+class ApiService {
+  static String get baseUrl {
+    final configured = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5000';
+    if (kIsWeb) {
+      final host = Uri.base.host;
+      if (host.isNotEmpty && host != 'localhost' && host != '127.0.0.1') {
+        final scheme = Uri.base.scheme == 'https' ? 'https' : 'http';
+        return '$scheme://$host:5000';
+      }
+    }
+    return configured;
+  }
+
+  // Authentication
+
+  static Future<Map<String, String>> login(
+    String email,
+    String password,
+  ) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/login'),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'email': email,
+            'password': password,
+          }),
+        )
+        .timeout(const Duration(seconds: 10));
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        data['error']?.toString() ?? 'Login failed',
+      );
+    }
+
+    return {
+      'id': data['id']?.toString() ?? '',
+      'token': data['token']?.toString() ?? '',
+    };
+  }
+
+  static Future<Map<String, String>> register(
+    String email,
+    String password,
+  ) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/register'),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'email': email,
+            'password': password,
+          }),
+        )
+        .timeout(const Duration(seconds: 10));
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        data['error']?.toString() ?? 'Registration failed',
+      );
+    }
+
+    return {
+      'id': data['id']?.toString() ?? '',
+      'token': data['token']?.toString() ?? '',
+    };
+  }
+
+  static Future<void> logout(String token) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/logout'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    var message = 'Logout failed';
+
+    if (response.body.isNotEmpty) {
+      try {
+        final data = jsonDecode(response.body);
+
+        if (data is Map && data['error'] != null) {
+          message = data['error'].toString();
+        }
+      } catch (_) {
+        // Ignore malformed error responses and use the default message.
+      }
+    }
+
+    throw Exception(message);
+  }
+
+  static Future<bool> forgotPassword(
+    String email,
+  ) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/forgot-password'),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'email': email,
+          }),
+        )
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      return false;
+    }
+
+    final data = jsonDecode(response.body);
+    final success = data['success'];
+
+    return success == true || (success is String && success.trim().isNotEmpty);
+  }
+
+  static Future<bool> updatePassword(
+    String password,
+    String token,
+  ) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/update-password'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'password': password,
+          }),
+        )
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      return false;
+    }
+
+    final data = jsonDecode(response.body);
+    final success = data['success'];
+
+    return success == true || (success is String && success.trim().isNotEmpty);
+  }
+
+  // History
+
+  static Future<List<Map<String, String>>> getHistory(
+    String token,
+  ) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/me/history'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    ).timeout(const Duration(seconds: 10));
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        data['error']?.toString() ?? 'Failed to retrieve history',
+      );
+    }
+
+    final history = data['history'];
+
+    if (history is! List) {
+      return [];
+    }
+
+    return history
+        .whereType<Map>()
+        .map<Map<String, String>>(
+          (item) => {
+            'id': item['id']?.toString() ?? '',
+            'translation': item['translation']?.toString() ?? '',
+            'timestamp': item['timestamp']?.toString() ?? '',
+          },
+        )
+        .toList();
+  }
+
+  static Future<Map<String, String>> postHistory(
+    String translation,
+    String token,
+  ) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/me/history'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'translation': translation,
+          }),
+        )
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final data = jsonDecode(response.body);
+
+      throw Exception(
+        data['error']?.toString() ??
+            data['detail']?.toString() ??
+            'Failed to store history',
+      );
+    }
+
+    Map<String, dynamic> data = {};
+
+    if (response.body.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(response.body);
+
+        if (decoded is Map<String, dynamic>) {
+          data = decoded;
+        }
+      } catch (_) {}
+    }
+
+    return {
+      'id': data['id']?.toString() ?? '',
+      'translation': data['translation']?.toString() ?? translation,
+      'timestamp': data['timestamp']?.toString() ?? '',
+    };
+  }
+
+  static Future<void> deleteHistoryItem(
+    String id,
+    String token,
+  ) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/me/history/$id'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final data = jsonDecode(response.body);
+
+      throw Exception(
+        data['error']?.toString() ??
+            data['detail']?.toString() ??
+            'Failed to delete history item',
+      );
+    }
+  }
+
+  static Future<void> clearHistory(
+    String token,
+  ) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/me/history'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final data = jsonDecode(response.body);
+
+      throw Exception(
+        data['error']?.toString() ??
+            data['detail']?.toString() ??
+            'Failed to clear history',
+      );
+    }
+  }
+
+  // ── AI4Bharat INCLUDE Dataset (Zenodo Record 4010759) ──
+
+  static Future<Map<String, dynamic>> fetchIncludeInfo() async {
+    final response = await http
+        .get(Uri.parse('$baseUrl/dataset/include/info'))
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw Exception('Failed to fetch INCLUDE dataset info');
+  }
+
+  static Future<List<String>> fetchIncludeCategories() async {
+    final response = await http
+        .get(Uri.parse('$baseUrl/dataset/include/categories'))
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final data = jsonDecode(response.body);
+      return List<String>.from(data['categories'] ?? []);
+    }
+    return ['All'];
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchIncludeSigns({
+    String? category,
+    String? query,
+    bool coreOnly = false,
+  }) async {
+    final params = <String, String>{};
+    if (category != null && category != 'All') params['category'] = category;
+    if (query != null && query.isNotEmpty) params['query'] = query;
+    if (coreOnly) params['core_only'] = 'true';
+
+    final uri = Uri.parse('$baseUrl/dataset/include/signs')
+        .replace(queryParameters: params);
+    final response = await http.get(uri).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final data = jsonDecode(response.body);
+      final rawList = data['signs'] as List? ?? [];
+      return rawList.map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+    throw Exception('Failed to fetch INCLUDE signs');
+  }
+
+  static Future<Map<String, dynamic>> translateVideo({
+    String? filePath,
+    Uint8List? bytes,
+    String? filename,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/slt/v1/translate-video'),
+    );
+
+    if (bytes != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          bytes,
+          filename: filename ?? 'video.mp4',
+        ),
+      );
+    } else if (filePath != null && !kIsWeb) {
+      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+    } else {
+      throw Exception('Video file data not provided');
+    }
+
+    try {
+      final response = await (() async {
+        final streamedResponse = await request.send();
+        return http.Response.fromStream(streamedResponse);
+      })()
+          .timeout(const Duration(minutes: 10));
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        throw Exception('The translation server returned an invalid response.');
+      }
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        final message =
+            decoded['detail'] ?? decoded['error'] ?? decoded['message'];
+        throw Exception(
+          message?.toString() ??
+              'Video translation failed (${response.statusCode}).',
+        );
+      }
+
+      final sentence = decoded['translated_sentence']?.toString() ??
+          decoded['sentence']?.toString() ??
+          '';
+      if (sentence.trim().isEmpty) {
+        throw Exception(
+          decoded['message']?.toString() ??
+              'No translation was recognized. Try a clearer video.',
+        );
+      }
+
+      return decoded;
+    } on TimeoutException {
+      throw Exception(
+        'Video translation timed out. Try a shorter video and try again.',
+      );
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception(
+        'Could not reach the translation server at $baseUrl: $e',
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> sendContactMessage({
+    required String name,
+    required String email,
+    required String subject,
+    required String message,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/contact');
+    try {
+      final response = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'name': name,
+              'email': email,
+              'subject': subject,
+              'message': message,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(response.body);
+        return decoded is Map<String, dynamic>
+            ? decoded
+            : {'success': true, 'message': 'Message sent successfully.'};
+      } else {
+        final decoded = jsonDecode(response.body);
+        final err = decoded is Map
+            ? (decoded['detail'] ?? decoded['error'] ?? decoded['message'] ?? 'Failed to send message.')
+            : 'Failed to send message.';
+        throw Exception(err.toString());
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Could not connect to support service at $baseUrl: $e');
+    }
+  }
+}
+
