@@ -22,12 +22,16 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
     final isProperNoun = currentItem?['type'] == 'proper_noun_group' || currentItem?['is_name'] == true;
 
     return Scaffold(
-      backgroundColor: AshWineTheme.bgDark,
+      backgroundColor: AshWineTheme.bg(context),
       appBar: AppBar(
-        backgroundColor: AshWineTheme.bgDark,
+        backgroundColor: AshWineTheme.surface(context),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AshWineTheme.textPrimaryDark, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            color: AshWineTheme.textPrimary(context),
+            size: 20,
+          ),
           onPressed: () {
             provider.pauseISL();
             Navigator.of(context).pop();
@@ -41,33 +45,33 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AshWineTheme.primaryDark,
+                    color: AshWineTheme.isDark(context) ? AshWineTheme.primaryDark : AshWineTheme.cardBgSecondaryLight,
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AshWineTheme.cardBorderDark),
+                    border: Border.all(color: AshWineTheme.cardBorder(context)),
                   ),
                   child: Text(
                     provider.selectedStationCode,
-                    style: const TextStyle(
-                      color: AshWineTheme.champagne,
+                    style: TextStyle(
+                      color: AshWineTheme.isDark(context) ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'Indian Sign Language (ISL)',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AshWineTheme.textPrimaryDark,
+                    color: AshWineTheme.textPrimary(context),
                   ),
                 ),
               ],
             ),
             Text(
               'Railway Announcement Gesture Player',
-              style: TextStyle(fontSize: 12, color: AshWineTheme.textMutedDark),
+              style: TextStyle(fontSize: 12, color: AshWineTheme.textMuted(context)),
             ),
           ],
         ),
@@ -149,24 +153,37 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
   }
 
   Widget _buildAnnouncementHeader(TranslationProvider provider) {
+    final isDark = AshWineTheme.isDark(context);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AshWineTheme.surfaceDark,
+        color: AshWineTheme.surface(context),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AshWineTheme.cardBorderDark),
+        border: Border.all(color: AshWineTheme.cardBorder(context)),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: AshWineTheme.exactAshWine.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AshWineTheme.primary.withOpacity(0.4),
+              color: isDark ? AshWineTheme.primary.withOpacity(0.4) : AshWineTheme.cardBgSecondaryLight,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.campaign, color: AshWineTheme.champagne, size: 20),
+            child: Icon(
+              Icons.campaign,
+              color: isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -175,8 +192,8 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
               children: [
                 Text(
                   provider.selectedStationName,
-                  style: const TextStyle(
-                    color: AshWineTheme.champagne,
+                  style: TextStyle(
+                    color: isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -188,8 +205,8 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
                       : provider.originalTranscription,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AshWineTheme.textPrimaryDark,
+                  style: TextStyle(
+                    color: AshWineTheme.textPrimary(context),
                     fontSize: 13,
                     height: 1.3,
                   ),
@@ -200,7 +217,9 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
           IconButton(
             icon: Icon(
               provider.isSpeaking ? Icons.volume_up : Icons.volume_up_outlined,
-              color: provider.isSpeaking ? AshWineTheme.champagne : AshWineTheme.rose,
+              color: provider.isSpeaking
+                  ? AshWineTheme.champagne
+                  : (isDark ? AshWineTheme.rose : AshWineTheme.exactAshWine),
               size: 22,
             ),
             onPressed: () => provider.speakTranslation(),
@@ -212,6 +231,7 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
 
   /// Visual representation for Standard Words (e.g. ATTENTION, TRAIN, PLATFORM, ARRIVE, CHILD)
   Widget _buildStandardSignCard(Map<String, dynamic> item) {
+    final isDark = AshWineTheme.isDark(context);
     final label = item['label'] ?? '';
     final kannadaLabel = item['kannada_label'] ?? '';
     final hindiLabel = item['hindi_label'] ?? '';
@@ -222,12 +242,12 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: AshWineTheme.cardGlowGradient,
+        color: isDark ? AshWineTheme.cardDark : AshWineTheme.surfaceLight,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AshWineTheme.cardBorderDark, width: 1.5),
+        border: Border.all(color: AshWineTheme.cardBorder(context), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: AshWineTheme.primaryDark.withOpacity(0.4),
+            color: (isDark ? AshWineTheme.primaryDark : AshWineTheme.exactAshWine).withOpacity(isDark ? 0.4 : 0.08),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -391,6 +411,7 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
   /// PROPER NOUN & NAME FINGERSPELLING CARD
   /// Implements letter-by-letter manual fingerspelling (e.g. S-H-R-E-Y-A)
   Widget _buildProperNounFingerspellingCard(Map<String, dynamic> item) {
+    final isDark = AshWineTheme.isDark(context);
     final nameText = item['name_text'] ?? item['label'] ?? '';
     final letters = (item['letters'] as List? ?? []).map((e) => Map<String, dynamic>.from(e)).toList();
 
@@ -404,19 +425,12 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF3B1824),
-            const Color(0xFF26101B),
-          ],
-        ),
+        color: isDark ? const Color(0xFF26101B) : AshWineTheme.surfaceLight,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AshWineTheme.entityAmber.withOpacity(0.6), width: 2),
+        border: Border.all(color: AshWineTheme.entityAmber.withOpacity(isDark ? 0.6 : 0.5), width: 2),
         boxShadow: [
           BoxShadow(
-            color: AshWineTheme.entityAmber.withOpacity(0.18),
+            color: AshWineTheme.entityAmber.withOpacity(isDark ? 0.18 : 0.08),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -453,7 +467,9 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AshWineTheme.entityAmber.withOpacity(0.15),
+                  color: isDark
+                      ? AshWineTheme.entityAmber.withOpacity(0.15)
+                      : AshWineTheme.cardBgSecondaryLight,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Text(
@@ -484,7 +500,7 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
           const SizedBox(height: 6),
           Text(
             'Fingerspelling letter-by-letter in Indian Sign Language',
-            style: TextStyle(fontSize: 12, color: AshWineTheme.textSecondaryDark),
+            style: TextStyle(fontSize: 12, color: AshWineTheme.textSecondary(context)),
           ),
 
           const SizedBox(height: 18),
@@ -493,9 +509,9 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             decoration: BoxDecoration(
-              color: AshWineTheme.bgDark.withOpacity(0.6),
+              color: isDark ? AshWineTheme.bgDark.withOpacity(0.6) : AshWineTheme.cardBgSecondaryLight,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AshWineTheme.cardBorderDark),
+              border: Border.all(color: AshWineTheme.cardBorder(context)),
             ),
             child: Wrap(
               spacing: 8,
@@ -515,10 +531,12 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
                     height: 48,
                     decoration: BoxDecoration(
                       gradient: isSelected ? AshWineTheme.properNounGradient : null,
-                      color: isSelected ? null : AshWineTheme.surfaceDark,
+                      color: isSelected
+                          ? null
+                          : (isDark ? AshWineTheme.surfaceDark : AshWineTheme.surfaceLight),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: isSelected ? AshWineTheme.entityAmber : AshWineTheme.cardBorderDark,
+                        color: isSelected ? AshWineTheme.entityAmber : AshWineTheme.cardBorder(context),
                         width: isSelected ? 2 : 1,
                       ),
                       boxShadow: isSelected
@@ -536,7 +554,9 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
-                          color: isSelected ? Colors.white : AshWineTheme.textSecondaryDark,
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark ? AshWineTheme.textSecondaryDark : AshWineTheme.textPrimary(context)),
                         ),
                       ),
                     ),
@@ -553,9 +573,21 @@ class _SignLanguagePlayerScreenState extends State<SignLanguagePlayerScreen> {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: AshWineTheme.surfaceDark,
+                color: isDark ? AshWineTheme.surfaceDark : AshWineTheme.surfaceLight,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AshWineTheme.entityAmber.withOpacity(0.4)),
+                border: Border.all(
+                  color: isDark
+                      ? AshWineTheme.entityAmber.withOpacity(0.4)
+                      : AshWineTheme.cardBorder(context),
+                ),
+                boxShadow: [
+                  if (!isDark)
+                    BoxShadow(
+                      color: AshWineTheme.exactAshWine.withOpacity(0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                ],
               ),
               child: Column(
                 children: [

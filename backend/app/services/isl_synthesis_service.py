@@ -426,8 +426,20 @@ RAILWAY_ISL_DICTIONARY: Dict[str, Dict[str, Any]] = {
     }
 }
 
+from pathlib import Path
+
 # User custom mapped announcement videos storage in memory/json
 CUSTOM_DATASET_STORE: Dict[str, Dict[str, Any]] = {}
+
+def load_user_custom_registry() -> Dict[str, Any]:
+    registry_file = Path(__file__).resolve().parent / "user_isl_registry.json"
+    if registry_file.exists():
+        try:
+            with open(registry_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
 
 def get_fingerspelling_for_name(name: str) -> List[Dict[str, Any]]:
     """
@@ -435,15 +447,25 @@ def get_fingerspelling_for_name(name: str) -> List[Dict[str, Any]]:
     the Indian Sign Language (ISL) two-handed manual alphabet letters.
     """
     clean_name = "".join(ch for ch in name.upper() if ch.isalnum())
+    user_reg = load_user_custom_registry()
+    user_alphabet = user_reg.get("alphabet", {})
+    user_numbers = user_reg.get("numbers", {})
+
     result = []
     for ch in clean_name:
         if ch in ISL_ALPHABET_DATA:
             letter_info = dict(ISL_ALPHABET_DATA[ch])
             letter_info["char"] = ch
+            if ch in user_alphabet:
+                letter_info["custom_video_url"] = user_alphabet[ch].get("primary_clip")
+                letter_info["is_user_recorded"] = True
             result.append(letter_info)
         elif ch in ISL_DIGITS_DATA:
             digit_info = dict(ISL_DIGITS_DATA[ch])
             digit_info["char"] = ch
+            if ch in user_numbers:
+                digit_info["custom_video_url"] = user_numbers[ch].get("primary_clip")
+                digit_info["is_user_recorded"] = True
             result.append(digit_info)
     return result
 

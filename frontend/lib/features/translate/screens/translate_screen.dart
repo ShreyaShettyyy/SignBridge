@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/ash_wine_theme.dart';
+import '../../settings/providers/settings_provider.dart';
 import '../providers/translation_provider.dart';
 import 'sign_language_player_screen.dart';
 
@@ -46,9 +47,8 @@ class _TranslateScreenState extends State<TranslateScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<TranslationProvider>();
-
     return Scaffold(
-      backgroundColor: AshWineTheme.bgDark,
+      backgroundColor: AshWineTheme.bg(context),
       body: SafeArea(
         child: Column(
           children: [
@@ -95,11 +95,20 @@ class _TranslateScreenState extends State<TranslateScreen> {
   }
 
   Widget _buildHeader(TranslationProvider provider) {
+    final isDark = AshWineTheme.isDark(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AshWineTheme.surfaceDark,
-        border: const Border(bottom: BorderSide(color: AshWineTheme.cardBorderDark)),
+        color: AshWineTheme.surface(context),
+        border: Border(bottom: BorderSide(color: AshWineTheme.cardBorder(context))),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: AshWineTheme.exactAshWine.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -112,18 +121,25 @@ class _TranslateScreenState extends State<TranslateScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    gradient: AshWineTheme.wineHeroGradient,
+                    color: isDark ? AshWineTheme.cardDark : AshWineTheme.cardBgSecondaryLight,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AshWineTheme.rose, width: 1),
+                    border: Border.all(
+                      color: isDark ? AshWineTheme.rose : AshWineTheme.exactAshWine.withOpacity(0.2),
+                      width: 1,
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.train, color: AshWineTheme.champagne, size: 16),
+                      Icon(
+                        Icons.train,
+                        color: isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
+                        size: 16,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         provider.selectedStationCode,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : AshWineTheme.exactAshWine,
                           fontWeight: FontWeight.w800,
                           fontSize: 13,
                         ),
@@ -139,28 +155,55 @@ class _TranslateScreenState extends State<TranslateScreen> {
                       children: [
                         Text(
                           provider.selectedStationName,
-                          style: const TextStyle(
-                            color: AshWineTheme.textPrimaryDark,
+                          style: TextStyle(
+                            color: AshWineTheme.textPrimary(context),
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const Icon(Icons.arrow_drop_down, color: AshWineTheme.rose, size: 18),
+                        Icon(
+                          Icons.arrow_drop_down,
+                          color: isDark ? AshWineTheme.rose : AshWineTheme.mauve,
+                          size: 18,
+                        ),
                       ],
                     ),
                     Text(
                       'Railway Public Address & Sign Bridge',
-                      style: TextStyle(color: AshWineTheme.textMutedDark, fontSize: 11),
+                      style: TextStyle(color: AshWineTheme.textMuted(context), fontSize: 11),
                     ),
                   ],
                 ),
               ],
             ),
           ),
-          IconButton(
-            tooltip: 'Station information',
-            icon: const Icon(Icons.info_outline, color: AshWineTheme.rose, size: 20),
-            onPressed: () => _showStationPicker(context, provider),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Theme switcher
+              Consumer<SettingsProvider>(
+                builder: (context, settings, _) {
+                  return IconButton(
+                    tooltip: settings.isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme',
+                    icon: Icon(
+                      settings.isDarkMode ? Icons.light_mode : Icons.dark_mode_outlined,
+                      color: settings.isDarkMode ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
+                      size: 20,
+                    ),
+                    onPressed: () => settings.toggleDarkMode(!settings.isDarkMode),
+                  );
+                },
+              ),
+              IconButton(
+                tooltip: 'Station information',
+                icon: Icon(
+                  Icons.info_outline,
+                  color: isDark ? AshWineTheme.rose : AshWineTheme.exactAshWine,
+                  size: 20,
+                ),
+                onPressed: () => _showStationPicker(context, provider),
+              ),
+            ],
           ),
         ],
       ),
@@ -172,9 +215,9 @@ class _TranslateScreenState extends State<TranslateScreen> {
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AshWineTheme.surfaceDark,
+        color: AshWineTheme.surface(context),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AshWineTheme.cardBorderDark),
+        border: Border.all(color: AshWineTheme.cardBorder(context)),
       ),
       child: Row(
         children: [
@@ -207,6 +250,7 @@ class _TranslateScreenState extends State<TranslateScreen> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final isDark = AshWineTheme.isDark(context);
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -215,20 +259,26 @@ class _TranslateScreenState extends State<TranslateScreen> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? AshWineTheme.primaryLight : Colors.transparent,
+            color: isSelected
+                ? (isDark ? AshWineTheme.primaryLight : AshWineTheme.exactAshWine)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 14, color: isSelected ? Colors.white : AshWineTheme.textSecondaryDark),
+              Icon(
+                icon,
+                size: 14,
+                color: isSelected ? Colors.white : AshWineTheme.textSecondary(context),
+              ),
               const SizedBox(width: 5),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? Colors.white : AshWineTheme.textSecondaryDark,
+                  color: isSelected ? Colors.white : AshWineTheme.textSecondary(context),
                 ),
               ),
             ],
@@ -240,12 +290,21 @@ class _TranslateScreenState extends State<TranslateScreen> {
 
   /// YOUTUBE INPUT SECTION
   Widget _buildYouTubeInputSection(TranslationProvider provider) {
+    final isDark = AshWineTheme.isDark(context);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AshWineTheme.surfaceDark,
+        color: AshWineTheme.surface(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AshWineTheme.cardBorderDark),
+        border: Border.all(color: AshWineTheme.cardBorder(context)),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: AshWineTheme.exactAshWine.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,13 +313,17 @@ class _TranslateScreenState extends State<TranslateScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
-                children: const [
-                  Icon(Icons.ondemand_video, color: AshWineTheme.champagne, size: 18),
-                  SizedBox(width: 8),
+                children: [
+                  Icon(
+                    Icons.ondemand_video,
+                    color: isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
                   Text(
                     'YouTube Railway Video Sound',
                     style: TextStyle(
-                      color: AshWineTheme.textPrimaryDark,
+                      color: AshWineTheme.textPrimary(context),
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
@@ -270,13 +333,13 @@ class _TranslateScreenState extends State<TranslateScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AshWineTheme.primaryDark,
+                  color: isDark ? AshWineTheme.primaryDark : AshWineTheme.cardBgSecondaryLight,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text(
+                child: Text(
                   'Acoustic Audio (Not Captions)',
                   style: TextStyle(
-                    color: AshWineTheme.rose,
+                    color: isDark ? AshWineTheme.rose : AshWineTheme.exactAshWine,
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
@@ -287,23 +350,31 @@ class _TranslateScreenState extends State<TranslateScreen> {
           const SizedBox(height: 10),
           Text(
             'Paste a YouTube link containing railway announcements. The app extracts raw sound, transcribes words, detects named entities (like person names), and converts to Indian Sign Language.',
-            style: TextStyle(fontSize: 12, color: AshWineTheme.textSecondaryDark, height: 1.4),
+            style: TextStyle(fontSize: 12, color: AshWineTheme.textSecondary(context), height: 1.4),
           ),
           const SizedBox(height: 14),
 
           // URL Input Field
           TextField(
             controller: _youtubeController,
-            style: const TextStyle(color: AshWineTheme.textPrimaryDark, fontSize: 13),
+            style: TextStyle(color: AshWineTheme.textPrimary(context), fontSize: 13),
             decoration: InputDecoration(
               hintText: 'https://www.youtube.com/watch?v=...',
-              hintStyle: TextStyle(color: AshWineTheme.textMutedDark, fontSize: 12),
+              hintStyle: TextStyle(color: AshWineTheme.textMuted(context), fontSize: 12),
               filled: true,
-              fillColor: AshWineTheme.cardDark,
-              prefixIcon: const Icon(Icons.link, color: AshWineTheme.rose, size: 18),
+              fillColor: isDark ? AshWineTheme.cardDark : AshWineTheme.cardBgSecondaryLight,
+              prefixIcon: Icon(
+                Icons.link,
+                color: isDark ? AshWineTheme.rose : AshWineTheme.exactAshWine,
+                size: 18,
+              ),
               suffixIcon: IconButton(
                 tooltip: 'Paste from clipboard',
-                icon: const Icon(Icons.content_paste, color: AshWineTheme.champagne, size: 18),
+                icon: Icon(
+                  Icons.content_paste,
+                  color: isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
+                  size: 18,
+                ),
                 onPressed: () async {
                   final data = await Clipboard.getData('text/plain');
                   if (data?.text != null && data!.text!.isNotEmpty) {
@@ -313,7 +384,11 @@ class _TranslateScreenState extends State<TranslateScreen> {
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AshWineTheme.cardBorderDark),
+                borderSide: BorderSide(color: AshWineTheme.cardBorder(context)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AshWineTheme.cardBorder(context)),
               ),
             ),
           ),
@@ -326,7 +401,7 @@ class _TranslateScreenState extends State<TranslateScreen> {
             height: 48,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AshWineTheme.primaryLight,
+                backgroundColor: AshWineTheme.exactAshWine,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -352,16 +427,17 @@ class _TranslateScreenState extends State<TranslateScreen> {
 
   /// KARNATAKA PRESETS SECTION
   Widget _buildKarnatakaPresetsSection(TranslationProvider provider) {
+    final isDark = AshWineTheme.isDark(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Featured Karnataka Railway Announcements',
               style: TextStyle(
-                color: AshWineTheme.textPrimaryDark,
+                color: AshWineTheme.textPrimary(context),
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
               ),
@@ -369,12 +445,18 @@ class _TranslateScreenState extends State<TranslateScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
               decoration: BoxDecoration(
-                color: AshWineTheme.champagne.withOpacity(0.15),
+                color: isDark
+                    ? AshWineTheme.champagne.withOpacity(0.15)
+                    : AshWineTheme.cardBgSecondaryLight,
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text(
+              child: Text(
                 '1-Tap Test',
-                style: TextStyle(color: AshWineTheme.champagne, fontSize: 11, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -483,11 +565,20 @@ class _TranslateScreenState extends State<TranslateScreen> {
     required String previewText,
     required VoidCallback onTap,
   }) {
+    final isDark = AshWineTheme.isDark(context);
     return Container(
       decoration: BoxDecoration(
-        color: AshWineTheme.surfaceDark,
+        color: AshWineTheme.surface(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AshWineTheme.cardBorderDark),
+        border: Border.all(color: AshWineTheme.cardBorder(context)),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: AshWineTheme.exactAshWine.withOpacity(0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -505,14 +596,18 @@ class _TranslateScreenState extends State<TranslateScreen> {
                     Expanded(
                       child: Text(
                         title,
-                        style: const TextStyle(
-                          color: AshWineTheme.textPrimaryDark,
+                        style: TextStyle(
+                          color: AshWineTheme.textPrimary(context),
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
-                    const Icon(Icons.play_circle_outline, color: AshWineTheme.champagne, size: 20),
+                    Icon(
+                      Icons.play_circle_outline,
+                      color: isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
+                      size: 20,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -531,7 +626,7 @@ class _TranslateScreenState extends State<TranslateScreen> {
                 const SizedBox(height: 8),
                 Text(
                   previewText,
-                  style: TextStyle(color: AshWineTheme.textSecondaryDark, fontSize: 12, height: 1.3),
+                  style: TextStyle(color: AshWineTheme.textSecondary(context), fontSize: 12, height: 1.3),
                 ),
               ],
             ),
@@ -543,20 +638,29 @@ class _TranslateScreenState extends State<TranslateScreen> {
 
   /// CUSTOM TEXT INPUT SECTION
   Widget _buildTextInputSection(TranslationProvider provider) {
+    final isDark = AshWineTheme.isDark(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AshWineTheme.surfaceDark,
+        color: AshWineTheme.surface(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AshWineTheme.cardBorderDark),
+        border: Border.all(color: AshWineTheme.cardBorder(context)),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: AshWineTheme.exactAshWine.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Type or Speak Railway Announcement',
             style: TextStyle(
-              color: AshWineTheme.textPrimaryDark,
+              color: AshWineTheme.textPrimary(context),
               fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
@@ -565,16 +669,20 @@ class _TranslateScreenState extends State<TranslateScreen> {
           TextField(
             controller: _textController,
             maxLines: 3,
-            style: const TextStyle(color: AshWineTheme.textPrimaryDark, fontSize: 13),
+            style: TextStyle(color: AshWineTheme.textPrimary(context), fontSize: 13),
             decoration: InputDecoration(
               hintText:
                   'e.g. Attention please, child named Shreya has been found at platform 2...',
-              hintStyle: TextStyle(color: AshWineTheme.textMutedDark, fontSize: 12),
+              hintStyle: TextStyle(color: AshWineTheme.textMuted(context), fontSize: 12),
               filled: true,
-              fillColor: AshWineTheme.cardDark,
+              fillColor: isDark ? AshWineTheme.cardDark : AshWineTheme.cardBgSecondaryLight,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AshWineTheme.cardBorderDark),
+                borderSide: BorderSide(color: AshWineTheme.cardBorder(context)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AshWineTheme.cardBorder(context)),
               ),
             ),
           ),
@@ -584,7 +692,7 @@ class _TranslateScreenState extends State<TranslateScreen> {
             height: 44,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AshWineTheme.primaryLight,
+                backgroundColor: AshWineTheme.exactAshWine,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -667,6 +775,7 @@ class _TranslateScreenState extends State<TranslateScreen> {
 
   /// RESULT HUB: Transcribed Audio, Regional Language Selector, Natural Translation, and ISL Revealer
   Widget _buildResultHub(TranslationProvider provider) {
+    final isDark = AshWineTheme.isDark(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -675,9 +784,17 @@ class _TranslateScreenState extends State<TranslateScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AshWineTheme.surfaceDark,
+            color: AshWineTheme.surface(context),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AshWineTheme.cardBorderDark),
+            border: Border.all(color: AshWineTheme.cardBorder(context)),
+            boxShadow: [
+              if (!isDark)
+                BoxShadow(
+                  color: AshWineTheme.exactAshWine.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -686,13 +803,17 @@ class _TranslateScreenState extends State<TranslateScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
-                    children: const [
-                      Icon(Icons.graphic_eq, color: AshWineTheme.rose, size: 16),
-                      SizedBox(width: 6),
+                    children: [
+                      Icon(
+                        Icons.graphic_eq,
+                        color: isDark ? AshWineTheme.rose : AshWineTheme.exactAshWine,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
                       Text(
                         'Transcribed Announcement Audio',
                         style: TextStyle(
-                          color: AshWineTheme.rose,
+                          color: isDark ? AshWineTheme.rose : AshWineTheme.exactAshWine,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
@@ -702,12 +823,12 @@ class _TranslateScreenState extends State<TranslateScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AshWineTheme.cardDark,
+                      color: isDark ? AshWineTheme.cardDark : AshWineTheme.cardBgSecondaryLight,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       'Detected: ${provider.detectedLanguage}',
-                      style: TextStyle(color: AshWineTheme.textMutedDark, fontSize: 10.5),
+                      style: TextStyle(color: AshWineTheme.textMuted(context), fontSize: 10.5),
                     ),
                   ),
                 ],
@@ -715,8 +836,8 @@ class _TranslateScreenState extends State<TranslateScreen> {
               const SizedBox(height: 10),
               Text(
                 provider.originalTranscription,
-                style: const TextStyle(
-                  color: AshWineTheme.textPrimaryDark,
+                style: TextStyle(
+                  color: AshWineTheme.textPrimary(context),
                   fontSize: 13.5,
                   height: 1.4,
                   fontWeight: FontWeight.w500,
@@ -732,17 +853,21 @@ class _TranslateScreenState extends State<TranslateScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Translate to Regional Language',
               style: TextStyle(
-                color: AshWineTheme.textPrimaryDark,
+                color: AshWineTheme.textPrimary(context),
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
               ),
             ),
             Text(
               'Karnataka Standard',
-              style: TextStyle(color: AshWineTheme.champagne, fontSize: 11, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -771,9 +896,20 @@ class _TranslateScreenState extends State<TranslateScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            gradient: AshWineTheme.cardGlowGradient,
+            color: isDark ? AshWineTheme.cardDark : AshWineTheme.cardBgSecondaryLight,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AshWineTheme.rose.withOpacity(0.5), width: 1.2),
+            border: Border.all(
+              color: isDark ? AshWineTheme.rose.withOpacity(0.5) : AshWineTheme.exactAshWine.withOpacity(0.2),
+              width: 1.2,
+            ),
+            boxShadow: [
+              if (!isDark)
+                BoxShadow(
+                  color: AshWineTheme.exactAshWine.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -786,30 +922,35 @@ class _TranslateScreenState extends State<TranslateScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AshWineTheme.primaryDark,
+                          color: isDark ? AshWineTheme.primaryDark : AshWineTheme.surfaceLight,
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AshWineTheme.cardBorderDark),
+                          border: Border.all(color: AshWineTheme.cardBorder(context)),
                         ),
                         child: Text(
                           provider.targetLangName,
-                          style: const TextStyle(
-                            color: AshWineTheme.champagne,
+                          style: TextStyle(
+                            color: isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
                             fontSize: 11.5,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
+                      Text(
                         'Authentic Public Address',
-                        style: TextStyle(color: AshWineTheme.rose, fontSize: 11),
+                        style: TextStyle(
+                          color: isDark ? AshWineTheme.rose : AshWineTheme.mauve,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
                   IconButton(
                     icon: Icon(
                       provider.isSpeaking ? Icons.volume_up : Icons.volume_up_outlined,
-                      color: provider.isSpeaking ? AshWineTheme.champagne : AshWineTheme.textPrimaryDark,
+                      color: provider.isSpeaking
+                          ? AshWineTheme.champagne
+                          : (isDark ? Colors.white : AshWineTheme.exactAshWine),
                       size: 20,
                     ),
                     onPressed: () => provider.speakTranslation(),
@@ -819,8 +960,8 @@ class _TranslateScreenState extends State<TranslateScreen> {
               const SizedBox(height: 10),
               Text(
                 provider.translatedAnnouncement,
-                style: const TextStyle(
-                  color: AshWineTheme.textPrimaryDark,
+                style: TextStyle(
+                  color: AshWineTheme.textPrimary(context),
                   fontSize: 15,
                   height: 1.45,
                   fontWeight: FontWeight.w600,
@@ -834,10 +975,10 @@ class _TranslateScreenState extends State<TranslateScreen> {
 
         // 4. Named Entities Identified (e.g. Shreya, Train Number, Platform)
         if (provider.namedEntities.isNotEmpty) ...[
-          const Text(
+          Text(
             'Named Entity Recognition (NER)',
             style: TextStyle(
-              color: AshWineTheme.textPrimaryDark,
+              color: AshWineTheme.textPrimary(context),
               fontSize: 13,
               fontWeight: FontWeight.w700,
             ),
@@ -851,10 +992,12 @@ class _TranslateScreenState extends State<TranslateScreen> {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: isPerson ? AshWineTheme.entityAmber.withOpacity(0.2) : AshWineTheme.surfaceDark,
+                  color: isPerson
+                      ? AshWineTheme.entityAmber.withOpacity(0.18)
+                      : (isDark ? AshWineTheme.surfaceDark : AshWineTheme.cardBgSecondaryLight),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: isPerson ? AshWineTheme.entityAmber : AshWineTheme.cardBorderDark,
+                    color: isPerson ? AshWineTheme.entityAmber : AshWineTheme.cardBorder(context),
                     width: isPerson ? 1.5 : 1,
                   ),
                 ),
@@ -864,7 +1007,7 @@ class _TranslateScreenState extends State<TranslateScreen> {
                     Icon(
                       isPerson ? Icons.person_pin : Icons.label_important,
                       size: 14,
-                      color: isPerson ? AshWineTheme.entityAmber : AshWineTheme.champagne,
+                      color: isPerson ? AshWineTheme.entityAmber : (isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine),
                     ),
                     const SizedBox(width: 5),
                     Text(
@@ -872,7 +1015,9 @@ class _TranslateScreenState extends State<TranslateScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: isPerson ? AshWineTheme.entityAmber : AshWineTheme.textPrimaryDark,
+                        color: isPerson
+                            ? AshWineTheme.entityAmber
+                            : AshWineTheme.textPrimary(context),
                       ),
                     ),
                     if (isPerson) ...[
@@ -904,47 +1049,32 @@ class _TranslateScreenState extends State<TranslateScreen> {
           height: 56,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              padding: EdgeInsets.zero,
+              backgroundColor: AshWineTheme.exactAshWine,
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 4,
+              shadowColor: AshWineTheme.exactAshWine.withOpacity(0.35),
             ),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const SignLanguagePlayerScreen()),
               );
             },
-            child: Ink(
-              decoration: BoxDecoration(
-                gradient: AshWineTheme.wineHeroGradient,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AshWineTheme.rose, width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: AshWineTheme.primaryLight.withOpacity(0.4),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.sign_language, color: Colors.white, size: 24),
+                SizedBox(width: 10),
+                Text(
+                  'Reveal in Indian Sign Language (ISL) ✨',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.3,
                   ),
-                ],
-              ),
-              child: Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.sign_language, color: Colors.white, size: 24),
-                    SizedBox(width: 10),
-                    Text(
-                      'Reveal in Indian Sign Language (ISL) ✨',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ],
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -954,6 +1084,7 @@ class _TranslateScreenState extends State<TranslateScreen> {
 
   Widget _langChip(TranslationProvider provider, {required String code, required String name}) {
     final isSelected = provider.targetLanguage == code;
+    final isDark = AshWineTheme.isDark(context);
     return InkWell(
       onTap: () => provider.setTargetLanguage(code),
       borderRadius: BorderRadius.circular(20),
@@ -961,10 +1092,14 @@ class _TranslateScreenState extends State<TranslateScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AshWineTheme.primaryLight : AshWineTheme.surfaceDark,
+          color: isSelected
+              ? (isDark ? AshWineTheme.primaryLight : AshWineTheme.exactAshWine)
+              : (isDark ? AshWineTheme.surfaceDark : AshWineTheme.surfaceLight),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AshWineTheme.rose : AshWineTheme.cardBorderDark,
+            color: isSelected
+                ? (isDark ? AshWineTheme.rose : AshWineTheme.exactAshWine)
+                : AshWineTheme.cardBorder(context),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -973,7 +1108,9 @@ class _TranslateScreenState extends State<TranslateScreen> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? Colors.white : AshWineTheme.textSecondaryDark,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? AshWineTheme.textSecondaryDark : AshWineTheme.textPrimary(context)),
           ),
         ),
       ),
@@ -983,7 +1120,7 @@ class _TranslateScreenState extends State<TranslateScreen> {
   void _showStationPicker(BuildContext context, TranslationProvider provider) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AshWineTheme.surfaceDark,
+      backgroundColor: AshWineTheme.surface(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -997,16 +1134,16 @@ class _TranslateScreenState extends State<TranslateScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Select Karnataka Railway Station',
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: AshWineTheme.textPrimaryDark,
+                      color: AshWineTheme.textPrimary(context),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AshWineTheme.textMutedDark),
+                    icon: Icon(Icons.close, color: AshWineTheme.textMuted(context)),
                     onPressed: () => Navigator.pop(ctx),
                   ),
                 ],

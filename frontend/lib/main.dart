@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
               return MaterialApp(
                 debugShowCheckedModeBanner: false,
                 title: 'SignBridge - Railway ISL Accessibility',
-                themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.dark, // Default to stunning Ash Wine Dark
+                themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
                 theme: AshWineTheme.lightTheme,
                 darkTheme: AshWineTheme.darkTheme,
                 home: const SplashScreen(),

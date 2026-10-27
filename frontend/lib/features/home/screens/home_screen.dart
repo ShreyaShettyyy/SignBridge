@@ -11,6 +11,7 @@ import '../../vocabulary/screens/include_vocabulary_screen.dart';
 import '../../history/screens/history_screen.dart';
 import '../../saved/screens/saved_screen.dart';
 import '../../settings/screens/settings_screen.dart';
+import '../../settings/providers/settings_provider.dart';
 import 'about_screen.dart';
 import 'contact_us_screen.dart';
 import 'privacy_terms_screen.dart';
@@ -82,13 +83,14 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AshWineTheme.isDark(context);
     return Container(
       decoration: BoxDecoration(
-        color: AshWineTheme.surfaceDark,
-        border: const Border(top: BorderSide(color: AshWineTheme.cardBorderDark)),
+        color: AshWineTheme.surface(context),
+        border: Border(top: BorderSide(color: AshWineTheme.cardBorder(context))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: isDark ? Colors.black.withOpacity(0.3) : AshWineTheme.exactAshWine.withOpacity(0.06),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -100,10 +102,10 @@ class _BottomNav extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(0, Icons.home_outlined, Icons.home, 'Home'),
-              _navItem(1, Icons.campaign_outlined, Icons.campaign, 'Announce'),
-              _navItem(2, Icons.dataset_outlined, Icons.dataset, 'ISL Studio'),
-              _navItem(3, Icons.history_outlined, Icons.history, 'History'),
+              _navItem(context, 0, Icons.home_outlined, Icons.home, 'Home'),
+              _navItem(context, 1, Icons.campaign_outlined, Icons.campaign, 'Announce'),
+              _navItem(context, 2, Icons.dataset_outlined, Icons.dataset, 'ISL Studio'),
+              _navItem(context, 3, Icons.history_outlined, Icons.history, 'History'),
             ],
           ),
         ),
@@ -111,8 +113,9 @@ class _BottomNav extends StatelessWidget {
     );
   }
 
-  Widget _navItem(int index, IconData icon, IconData activeIcon, String label) {
+  Widget _navItem(BuildContext context, int index, IconData icon, IconData activeIcon, String label) {
     final isSelected = selectedIndex == index;
+    final isDark = AshWineTheme.isDark(context);
     return GestureDetector(
       onTap: () => onTap(index),
       behavior: HitTestBehavior.opaque,
@@ -123,24 +126,31 @@ class _BottomNav extends StatelessWidget {
           vertical: 8,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? AshWineTheme.primaryLight.withOpacity(0.3) : Colors.transparent,
+          color: isSelected
+              ? (isDark ? AshWineTheme.primaryLight.withOpacity(0.3) : AshWineTheme.cardBgSecondaryLight)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
-          border: isSelected ? Border.all(color: AshWineTheme.rose.withOpacity(0.4)) : null,
+          border: isSelected
+              ? Border.all(
+                  color: isDark ? AshWineTheme.rose.withOpacity(0.4) : AshWineTheme.exactAshWine.withOpacity(0.2))
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               isSelected ? activeIcon : icon,
-              color: isSelected ? AshWineTheme.champagne : AshWineTheme.textMutedDark,
+              color: isSelected
+                  ? (isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine)
+                  : AshWineTheme.textMuted(context),
               size: 22,
             ),
             if (isSelected) ...[
               const SizedBox(width: 6),
               Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: isDark ? Colors.white : AshWineTheme.exactAshWine,
                   fontWeight: FontWeight.w700,
                   fontSize: 12.5,
                 ),
@@ -164,7 +174,7 @@ class _HomeTab extends StatelessWidget {
     final String greeting = _greeting();
 
     return Scaffold(
-      backgroundColor: AshWineTheme.bgDark,
+      backgroundColor: AshWineTheme.bg(context),
       body: Column(
         children: [
           // App Header
@@ -323,14 +333,23 @@ class _AppHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AshWineTheme.isDark(context);
     return Container(
       decoration: BoxDecoration(
-        color: AshWineTheme.surfaceDark,
+        color: AshWineTheme.surface(context),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
-        border: const Border(bottom: BorderSide(color: AshWineTheme.cardBorderDark)),
+        border: Border(bottom: BorderSide(color: AshWineTheme.cardBorder(context))),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: AshWineTheme.exactAshWine.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+        ],
       ),
       child: SafeArea(
         bottom: false,
@@ -344,20 +363,26 @@ class _AppHeader extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      gradient: AshWineTheme.wineHeroGradient,
+                      color: isDark ? AshWineTheme.cardDark : AshWineTheme.cardBgSecondaryLight,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AshWineTheme.rose),
+                      border: Border.all(
+                        color: isDark ? AshWineTheme.rose : AshWineTheme.exactAshWine.withOpacity(0.3),
+                      ),
                     ),
-                    child: const Icon(Icons.sign_language, color: Colors.white, size: 20),
+                    child: Icon(
+                      Icons.sign_language,
+                      color: isDark ? Colors.white : AshWineTheme.exactAshWine,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
                         'SignBridge',
                         style: TextStyle(
-                          color: AshWineTheme.textPrimaryDark,
+                          color: AshWineTheme.textPrimary(context),
                           fontWeight: FontWeight.w800,
                           fontSize: 18,
                           letterSpacing: -0.3,
@@ -365,26 +390,48 @@ class _AppHeader extends StatelessWidget {
                       ),
                       Text(
                         'Railway Multilingual & ISL System',
-                        style: TextStyle(color: AshWineTheme.rose, fontSize: 11),
+                        style: TextStyle(
+                          color: isDark ? AshWineTheme.rose : AshWineTheme.mauve,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
                   const Spacer(),
+                  // Theme Toggle Button (Light / Dark)
+                  Consumer<SettingsProvider>(
+                    builder: (context, settings, _) {
+                      return IconButton(
+                        tooltip: settings.isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme',
+                        icon: Icon(
+                          settings.isDarkMode ? Icons.light_mode : Icons.dark_mode_outlined,
+                          color: settings.isDarkMode ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
+                          size: 22,
+                        ),
+                        onPressed: () => settings.toggleDarkMode(!settings.isDarkMode),
+                      );
+                    },
+                  ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AshWineTheme.cardDark,
+                      color: isDark ? AshWineTheme.cardDark : AshWineTheme.cardBgSecondaryLight,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AshWineTheme.cardBorderDark),
+                      border: Border.all(color: AshWineTheme.cardBorder(context)),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.train, size: 14, color: AshWineTheme.champagne),
+                        Icon(
+                          Icons.train,
+                          size: 14,
+                          color: isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           stationCode,
-                          style: const TextStyle(
-                            color: AshWineTheme.champagne,
+                          style: TextStyle(
+                            color: isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                           ),
@@ -403,12 +450,12 @@ class _AppHeader extends StatelessWidget {
                     children: [
                       Text(
                         greeting,
-                        style: TextStyle(color: AshWineTheme.textMutedDark, fontSize: 12),
+                        style: TextStyle(color: AshWineTheme.textMuted(context), fontSize: 12),
                       ),
                       Text(
                         stationName,
-                        style: const TextStyle(
-                          color: AshWineTheme.textPrimaryDark,
+                        style: TextStyle(
+                          color: AshWineTheme.textPrimary(context),
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                         ),
@@ -417,7 +464,7 @@ class _AppHeader extends StatelessWidget {
                   ),
                   CircleAvatar(
                     radius: 17,
-                    backgroundColor: AshWineTheme.primaryLight,
+                    backgroundColor: isDark ? AshWineTheme.primaryLight : AshWineTheme.exactAshWine,
                     child: Text(
                       initial,
                       style: const TextStyle(
@@ -550,16 +597,17 @@ class _FeaturedAnnouncementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AshWineTheme.isDark(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AshWineTheme.surfaceDark,
+        color: AshWineTheme.surface(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AshWineTheme.entityAmber.withOpacity(0.6), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: AshWineTheme.entityAmber.withOpacity(0.12),
+            color: AshWineTheme.entityAmber.withOpacity(isDark ? 0.12 : 0.08),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
@@ -595,21 +643,25 @@ class _FeaturedAnnouncementCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AshWineTheme.cardDark,
+                  color: isDark ? AshWineTheme.cardDark : AshWineTheme.cardBgSecondaryLight,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text(
+                child: Text(
                   'KSR Bengaluru SBC',
-                  style: TextStyle(color: AshWineTheme.champagne, fontSize: 11, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Missing Child Shreya Found Announcement',
             style: TextStyle(
-              color: AshWineTheme.textPrimaryDark,
+              color: AshWineTheme.textPrimary(context),
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
@@ -618,7 +670,7 @@ class _FeaturedAnnouncementCard extends StatelessWidget {
           Text(
             '"Attention please. A 6-year-old child named Shreya has been found near platform 2... safe with RPF."',
             style: TextStyle(
-              color: AshWineTheme.textSecondaryDark,
+              color: AshWineTheme.textSecondary(context),
               fontSize: 12.5,
               fontStyle: FontStyle.italic,
               height: 1.35,
@@ -642,12 +694,16 @@ class _FeaturedAnnouncementCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AshWineTheme.primaryDark,
+                  color: isDark ? AshWineTheme.primaryDark : AshWineTheme.cardBgSecondaryLight,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text(
+                child: Text(
                   'Fingerspelling: S-H-R-E-Y-A',
-                  style: TextStyle(color: AshWineTheme.rose, fontSize: 11, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: isDark ? AshWineTheme.rose : AshWineTheme.exactAshWine,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -658,7 +714,7 @@ class _FeaturedAnnouncementCard extends StatelessWidget {
             height: 44,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AshWineTheme.primaryLight,
+                backgroundColor: AshWineTheme.exactAshWine,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -695,22 +751,24 @@ class _ModulesGrid extends StatelessWidget {
           children: [
             Expanded(
               child: _moduleCard(
+                context,
                 title: 'YouTube Audio STT',
                 subtitle: 'Extract acoustic sound and translate',
                 icon: Icons.ondemand_video,
                 badge: 'Input Sound',
-                color: AshWineTheme.primaryLight,
+                color: AshWineTheme.rose,
                 onTap: onAnnounce,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _moduleCard(
+                context,
                 title: 'ISL Gesture Player',
                 subtitle: 'Sequenced gestures & letter fingerspelling',
                 icon: Icons.sign_language,
                 badge: 'Two-Handed ISL',
-                color: AshWineTheme.rose,
+                color: AshWineTheme.entityAmber,
                 onTap: onPlayer,
               ),
             ),
@@ -718,6 +776,7 @@ class _ModulesGrid extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _moduleCard(
+          context,
           title: 'Karnataka Announcement Dataset Studio',
           subtitle: 'KSR Bengaluru, Mysuru, Hubballi • Attach custom recorded sign videos',
           icon: Icons.dataset,
@@ -729,7 +788,8 @@ class _ModulesGrid extends StatelessWidget {
     );
   }
 
-  Widget _moduleCard({
+  Widget _moduleCard(
+    BuildContext context, {
     required String title,
     required String subtitle,
     required IconData icon,
@@ -737,15 +797,24 @@ class _ModulesGrid extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final isDark = AshWineTheme.isDark(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AshWineTheme.surfaceDark,
+          color: AshWineTheme.surface(context),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AshWineTheme.cardBorderDark),
+          border: Border.all(color: AshWineTheme.cardBorder(context)),
+          boxShadow: [
+            if (!isDark)
+              BoxShadow(
+                color: AshWineTheme.exactAshWine.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -756,7 +825,7 @@ class _ModulesGrid extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
+                    color: color.withOpacity(0.18),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(icon, color: color, size: 20),
@@ -764,12 +833,16 @@ class _ModulesGrid extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                   decoration: BoxDecoration(
-                    color: AshWineTheme.cardDark,
+                    color: isDark ? AshWineTheme.cardDark : AshWineTheme.cardBgSecondaryLight,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     badge,
-                    style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      color: isDark ? color : AshWineTheme.exactAshWine,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -777,8 +850,8 @@ class _ModulesGrid extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               title,
-              style: const TextStyle(
-                color: AshWineTheme.textPrimaryDark,
+              style: TextStyle(
+                color: AshWineTheme.textPrimary(context),
                 fontSize: 13.5,
                 fontWeight: FontWeight.w700,
               ),
@@ -786,7 +859,7 @@ class _ModulesGrid extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: TextStyle(color: AshWineTheme.textSecondaryDark, fontSize: 11.5, height: 1.3),
+              style: TextStyle(color: AshWineTheme.textSecondary(context), fontSize: 11.5, height: 1.3),
             ),
           ],
         ),
@@ -813,15 +886,16 @@ class _QuickActionsRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _quickAction(Icons.history, 'History', onHistory),
-        _quickAction(Icons.bookmark_border, 'Saved', onSaved),
-        _quickAction(Icons.settings_outlined, 'Settings', onSettings),
-        _quickAction(Icons.info_outline, 'About', onAbout),
+        _quickAction(context, Icons.history, 'History', onHistory),
+        _quickAction(context, Icons.bookmark_border, 'Saved', onSaved),
+        _quickAction(context, Icons.settings_outlined, 'Settings', onSettings),
+        _quickAction(context, Icons.info_outline, 'About', onAbout),
       ],
     );
   }
 
-  Widget _quickAction(IconData icon, String label, VoidCallback onTap) {
+  Widget _quickAction(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    final isDark = AshWineTheme.isDark(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -829,17 +903,33 @@ class _QuickActionsRow extends StatelessWidget {
         width: 78,
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: AshWineTheme.surfaceDark,
+          color: AshWineTheme.surface(context),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AshWineTheme.cardBorderDark),
+          border: Border.all(color: AshWineTheme.cardBorder(context)),
+          boxShadow: [
+            if (!isDark)
+              BoxShadow(
+                color: AshWineTheme.exactAshWine.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+          ],
         ),
         child: Column(
           children: [
-            Icon(icon, color: AshWineTheme.champagne, size: 22),
+            Icon(
+              icon,
+              color: isDark ? AshWineTheme.champagne : AshWineTheme.exactAshWine,
+              size: 22,
+            ),
             const SizedBox(height: 6),
             Text(
               label,
-              style: const TextStyle(color: AshWineTheme.textPrimaryDark, fontSize: 11, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: AshWineTheme.textPrimary(context),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -856,8 +946,8 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: const TextStyle(
-        color: AshWineTheme.textPrimaryDark,
+      style: TextStyle(
+        color: AshWineTheme.textPrimary(context),
         fontSize: 14.5,
         fontWeight: FontWeight.w800,
         letterSpacing: 0.2,

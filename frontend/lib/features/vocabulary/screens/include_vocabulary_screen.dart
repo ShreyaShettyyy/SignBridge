@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../settings/providers/settings_provider.dart';
 import '../../../core/theme/ash_wine_theme.dart';
 import '../../translate/providers/translation_provider.dart';
 import '../../translate/screens/sign_language_player_screen.dart';
@@ -147,29 +148,32 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: AshWineTheme.bgDark,
+      backgroundColor: AshWineTheme.bg(context),
       body: SafeArea(
         child: Column(
           children: [
             // Studio Header
-            _buildHeader(),
+            _buildHeader(context),
+
+            // Custom Dataset & ISL Guide Banner
+            _buildIslDatasetBanner(context),
 
             // Search Bar
-            _buildSearchBar(),
+            _buildSearchBar(context),
 
             // Category Horizontal Tabs
-            _buildCategoryTabs(),
+            _buildCategoryTabs(context),
 
             // Announcement List
             Expanded(
               child: filtered.isEmpty
-                  ? _buildEmptyState()
+                  ? _buildEmptyState(context)
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                       itemCount: filtered.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
-                        return _buildAnnouncementCard(filtered[index], provider);
+                        return _buildAnnouncementCard(context, filtered[index], provider);
                       },
                     ),
             ),
@@ -179,12 +183,15 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final settings = Provider.of<SettingsProvider>(context);
+    final isDark = AshWineTheme.isDark(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AshWineTheme.surfaceDark,
-        border: const Border(bottom: BorderSide(color: AshWineTheme.cardBorderDark)),
+        color: AshWineTheme.surface(context),
+        border: Border(bottom: BorderSide(color: AshWineTheme.cardBorder(context))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -204,56 +211,123 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Karnataka Railway Dataset Studio',
+                  Text(
+                    'Railway Dataset Studio',
                     style: TextStyle(
-                      color: AshWineTheme.textPrimaryDark,
+                      color: AshWineTheme.textPrimary(context),
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   Text(
-                    'Curate Announcements & Custom Sign Language Videos',
-                    style: TextStyle(color: AshWineTheme.textMutedDark, fontSize: 11),
+                    'Curate Announcements & Custom ISL Datasets',
+                    style: TextStyle(color: AshWineTheme.textMuted(context), fontSize: 11),
                   ),
                 ],
               ),
             ],
           ),
-          IconButton(
-            tooltip: 'Add new announcement to dataset',
-            icon: const Icon(Icons.add_circle, color: AshWineTheme.champagne, size: 26),
-            onPressed: () => _showAddAnnouncementDialog(context),
+          Row(
+            children: [
+              IconButton(
+                tooltip: isDark ? 'Switch to Light Theme' : 'Switch to Dark Theme',
+                icon: Icon(
+                  isDark ? Icons.light_mode : Icons.dark_mode,
+                  color: isDark ? AshWineTheme.champagne : AshWineTheme.primaryDark,
+                  size: 20,
+                ),
+                onPressed: () => settings.toggleDarkMode(!settings.isDarkMode),
+              ),
+              IconButton(
+                tooltip: 'Add new announcement to dataset',
+                icon: const Icon(Icons.add_circle, color: AshWineTheme.primaryLight, size: 24),
+                onPressed: () => _showAddAnnouncementDialog(context),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildIslDatasetBanner(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AshWineTheme.surface(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AshWineTheme.cardBorder(context)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.sign_language_rounded, color: AshWineTheme.primaryLight, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Two-Handed ISL Dataset: A-Z, 0-9 & Vocabulary',
+                  style: TextStyle(
+                    color: AshWineTheme.textPrimary(context),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  'Record custom gestures into datasets/user_custom_isl/ for training.',
+                  style: TextStyle(color: AshWineTheme.textMuted(context), fontSize: 10.5),
+                ),
+              ],
+            ),
+          ),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              side: const BorderSide(color: AshWineTheme.rose),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            icon: const Icon(Icons.menu_book_rounded, size: 14, color: AshWineTheme.primaryLight),
+            label: const Text(
+              'ISL Guide',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AshWineTheme.primaryLight),
+            ),
+            onPressed: () => _showIslGuideDialog(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: TextField(
-        style: const TextStyle(color: AshWineTheme.textPrimaryDark, fontSize: 13),
+        style: TextStyle(color: AshWineTheme.textPrimary(context), fontSize: 13),
         onChanged: (val) => setState(() => _searchQuery = val),
         decoration: InputDecoration(
           hintText: 'Search Karnataka announcements (e.g., Shreya, 12627, Hubballi)...',
-          hintStyle: TextStyle(color: AshWineTheme.textMutedDark, fontSize: 12),
+          hintStyle: TextStyle(color: AshWineTheme.textMuted(context), fontSize: 12),
           filled: true,
-          fillColor: AshWineTheme.surfaceDark,
+          fillColor: AshWineTheme.surface(context),
           prefixIcon: const Icon(Icons.search, color: AshWineTheme.rose, size: 18),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AshWineTheme.cardBorderDark),
+            borderSide: BorderSide(color: AshWineTheme.cardBorder(context)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: AshWineTheme.cardBorder(context)),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCategoryTabs() {
+  Widget _buildCategoryTabs(BuildContext context) {
     return SizedBox(
-      height: 42,
+      height: 40,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
@@ -270,10 +344,10 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? AshWineTheme.primaryLight : AshWineTheme.surfaceDark,
+                color: isSelected ? AshWineTheme.primaryLight : AshWineTheme.surface(context),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isSelected ? AshWineTheme.rose : AshWineTheme.cardBorderDark,
+                  color: isSelected ? AshWineTheme.rose : AshWineTheme.cardBorder(context),
                 ),
               ),
               child: Text(
@@ -281,7 +355,7 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? Colors.white : AshWineTheme.textSecondaryDark,
+                  color: isSelected ? Colors.white : AshWineTheme.textSecondary(context),
                 ),
               ),
             ),
@@ -291,7 +365,7 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
     );
   }
 
-  Widget _buildAnnouncementCard(Map<String, dynamic> item, TranslationProvider provider) {
+  Widget _buildAnnouncementCard(BuildContext context, Map<String, dynamic> item, TranslationProvider provider) {
     final title = item['title'] ?? '';
     final station = item['station_name'] ?? '';
     final stationCode = item['station_code'] ?? '';
@@ -302,9 +376,18 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AshWineTheme.surfaceDark,
+        color: AshWineTheme.surface(context),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AshWineTheme.cardBorderDark),
+        border: Border.all(color: AshWineTheme.cardBorder(context)),
+        boxShadow: AshWineTheme.isDark(context)
+            ? []
+            : [
+                BoxShadow(
+                  color: AshWineTheme.primaryDark.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,9 +398,9 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AshWineTheme.cardDark,
+                  color: AshWineTheme.card(context),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AshWineTheme.cardBorderDark),
+                  border: Border.all(color: AshWineTheme.cardBorder(context)),
                 ),
                 child: Row(
                   children: [
@@ -352,8 +435,8 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
 
           Text(
             title,
-            style: const TextStyle(
-              color: AshWineTheme.textPrimaryDark,
+            style: TextStyle(
+              color: AshWineTheme.textPrimary(context),
               fontSize: 15,
               fontWeight: FontWeight.w700,
             ),
@@ -363,7 +446,7 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
 
           Text(
             preview,
-            style: TextStyle(color: AshWineTheme.textSecondaryDark, fontSize: 12.5, height: 1.35),
+            style: TextStyle(color: AshWineTheme.textSecondary(context), fontSize: 12.5, height: 1.35),
           ),
 
           const SizedBox(height: 12),
@@ -378,10 +461,10 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: isPerson ? AshWineTheme.entityAmber.withOpacity(0.18) : AshWineTheme.cardDark,
+                    color: isPerson ? AshWineTheme.entityAmber.withOpacity(0.18) : AshWineTheme.card(context),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: isPerson ? AshWineTheme.entityAmber : AshWineTheme.cardBorderDark,
+                      color: isPerson ? AshWineTheme.entityAmber : AshWineTheme.cardBorder(context),
                     ),
                   ),
                   child: Row(
@@ -398,7 +481,7 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: isPerson ? AshWineTheme.entityAmber : AshWineTheme.textSecondaryDark,
+                          color: isPerson ? AshWineTheme.entityAmber : AshWineTheme.textSecondary(context),
                         ),
                       ),
                     ],
@@ -442,16 +525,176 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.search_off, size: 48, color: AshWineTheme.mauve.withOpacity(0.5)),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'No matching railway announcements',
-            style: TextStyle(color: AshWineTheme.textPrimaryDark, fontSize: 15, fontWeight: FontWeight.w600),
+            style: TextStyle(color: AshWineTheme.textPrimary(context), fontSize: 15, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showIslGuideDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AshWineTheme.surface(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.8,
+          maxChildSize: 0.95,
+          minChildSize: 0.5,
+          expand: false,
+          builder: (_, scrollCtrl) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: ListView(
+                controller: scrollCtrl,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.sign_language, color: AshWineTheme.primaryLight, size: 24),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Two-Handed ISL Dataset Guide',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: AshWineTheme.textPrimary(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: AshWineTheme.textMuted(context)),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AshWineTheme.card(context),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AshWineTheme.cardBorder(context)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '📹 How to Record Your Custom Gestures',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AshWineTheme.textPrimary(context),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '1. Run in terminal:\n   python scripts/record_my_gestures.py\n2. Select mode (Alphabet, Number, or Railway Word).\n3. Follow the 3-second visual countdown and perform the gesture 3-5 times.\n4. Run python scripts/train_user_dataset.py to compile the registry.',
+                          style: TextStyle(fontSize: 12, height: 1.4, color: AshWineTheme.textSecondary(context)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '🔤 Authentic Two-Handed ISL Alphabet (A–Z)',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AshWineTheme.textPrimary(context),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'In Indian Sign Language, the non-dominant hand serves as the base/paper and dominant hand executes the sign:',
+                    style: TextStyle(fontSize: 11.5, color: AshWineTheme.textMuted(context)),
+                  ),
+                  const SizedBox(height: 10),
+                  _buildGuideRow(context, 'S (Shreya)', 'Interlock both pinky fingers with both fists clenched.'),
+                  _buildGuideRow(context, 'H (Shreya)', 'Dominant open palm slides flat forward over non-dominant open palm.'),
+                  _buildGuideRow(context, 'R (Shreya)', 'Cross index finger over middle finger (fingers crossed).'),
+                  _buildGuideRow(context, 'E (Shreya)', 'Dominant index fingertip touches tip of non-dominant index finger.'),
+                  _buildGuideRow(context, 'Y (Shreya)', 'Dominant thumb and pinky extended (horn/V), non-dominant index points up into palm.'),
+                  _buildGuideRow(context, 'A (Shreya)', 'Dominant index fingertip touches tip of non-dominant thumb.'),
+                  const SizedBox(height: 16),
+                  Text(
+                    '🔢 Numbers (0–9)',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AshWineTheme.textPrimary(context),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildGuideRow(context, '0', 'Fingers curved touching thumb creating an "O" shape.'),
+                  _buildGuideRow(context, '1 - 5', 'Dominant index (1), +middle (2), +ring (3), 4 fingers (4), open hand (5).'),
+                  _buildGuideRow(context, '6 - 9', 'Non-dominant open palm (5) + dominant fingers (1 to 4) touching palm.'),
+                  const SizedBox(height: 16),
+                  Text(
+                    '🚉 Core Railway Words',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AshWineTheme.textPrimary(context),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildGuideRow(context, 'ATTENTION', 'Both open palms face audience and wave slightly up-down at chest.'),
+                  _buildGuideRow(context, 'TRAIN', 'Both hands with index & middle extended slide back and forth like rail tracks.'),
+                  _buildGuideRow(context, 'PLATFORM', 'Flat non-dominant hand palm down (elevated) + dominant hand pats surface.'),
+                  _buildGuideRow(context, 'CHILD', 'Flat palm pats downward in front indicating small child height.'),
+                  _buildGuideRow(context, 'FOUND / SAFE', 'Both open hands grasp forward and pull back with thumbs-up.'),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildGuideRow(BuildContext context, String term, String desc) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 100,
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: AshWineTheme.primaryDark.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: AshWineTheme.cardBorder(context)),
+            ),
+            child: Text(
+              term,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: AshWineTheme.primaryLight),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              desc,
+              style: TextStyle(fontSize: 11.5, color: AshWineTheme.textSecondary(context), height: 1.3),
+            ),
           ),
         ],
       ),
@@ -466,7 +709,7 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AshWineTheme.surfaceDark,
+      backgroundColor: AshWineTheme.surface(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -485,16 +728,16 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Add Karnataka Announcement',
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: AshWineTheme.textPrimaryDark,
+                      color: AshWineTheme.textPrimary(context),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AshWineTheme.textMutedDark),
+                    icon: Icon(Icons.close, color: AshWineTheme.textMuted(context)),
                     onPressed: () => Navigator.pop(ctx),
                   ),
                 ],
@@ -502,28 +745,36 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
               const SizedBox(height: 14),
               TextField(
                 controller: titleCtrl,
-                style: const TextStyle(color: AshWineTheme.textPrimaryDark),
+                style: TextStyle(color: AshWineTheme.textPrimary(context)),
                 decoration: InputDecoration(
                   labelText: 'Announcement Title',
                   labelStyle: const TextStyle(color: AshWineTheme.rose),
                   filled: true,
-                  fillColor: AshWineTheme.cardDark,
+                  fillColor: AshWineTheme.card(context),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AshWineTheme.cardBorder(context)),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: textCtrl,
                 maxLines: 3,
-                style: const TextStyle(color: AshWineTheme.textPrimaryDark),
+                style: TextStyle(color: AshWineTheme.textPrimary(context)),
                 decoration: InputDecoration(
                   labelText: 'Spoken Sound Track Text',
                   labelStyle: const TextStyle(color: AshWineTheme.rose),
                   hintText: 'e.g. Attention please, train 12627 arriving...',
-                  hintStyle: TextStyle(color: AshWineTheme.textMutedDark, fontSize: 12),
+                  hintStyle: TextStyle(color: AshWineTheme.textMuted(context), fontSize: 12),
                   filled: true,
-                  fillColor: AshWineTheme.cardDark,
+                  fillColor: AshWineTheme.card(context),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AshWineTheme.cardBorder(context)),
+                  ),
                 ),
               ),
               const SizedBox(height: 18),
@@ -537,7 +788,7 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   icon: const Icon(Icons.save),
-                  label: const Text('Add to Karnataka Dataset'),
+                  label: const Text('Add to Local Dataset'),
                   onPressed: () {
                     final t = titleCtrl.text.trim();
                     final body = textCtrl.text.trim();
@@ -579,7 +830,7 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AshWineTheme.surfaceDark,
+      backgroundColor: AshWineTheme.surface(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -597,27 +848,31 @@ class _IncludeVocabularyScreenState extends State<IncludeVocabularyScreen> {
             children: [
               Text(
                 'Attach Video: ${item['title']}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: AshWineTheme.textPrimaryDark,
+                  color: AshWineTheme.textPrimary(context),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Add a video recording of yourself demonstrating the sign language for this announcement.',
-                style: TextStyle(color: AshWineTheme.textSecondaryDark, fontSize: 12),
+                style: TextStyle(color: AshWineTheme.textSecondary(context), fontSize: 12),
               ),
               const SizedBox(height: 14),
               TextField(
                 controller: urlCtrl,
-                style: const TextStyle(color: AshWineTheme.textPrimaryDark),
+                style: TextStyle(color: AshWineTheme.textPrimary(context)),
                 decoration: InputDecoration(
                   labelText: 'Video URL or Local File Path',
                   labelStyle: const TextStyle(color: AshWineTheme.rose),
                   filled: true,
-                  fillColor: AshWineTheme.cardDark,
+                  fillColor: AshWineTheme.card(context),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AshWineTheme.cardBorder(context)),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),

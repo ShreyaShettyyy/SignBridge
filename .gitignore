@@ -63,7 +63,10 @@ firebase-admin.json
 
 
 # Datasets & Large Models
-datasets/
+datasets/*
+!datasets/CUSTOM_DATASET_GUIDE.md
+!datasets/user_custom_isl/
+!datasets/user_custom_isl/**/.gitkeep
 temp_videos/
 *.pth
 *.joblib

@@ -1,73 +1,136 @@
 import 'package:flutter/material.dart';
 
-/// Bespoke "Ash Wine" Color Palette and Theme System
-/// Crafted specifically for the Railway Announcements & Indian Sign Language system.
+/// Bespoke "Ash Wine" Color Palette and Dynamic Theme System
+///
+/// Exact color specifications provided:
+/// - CMYK: 0, 18, 6, 80
+/// - RGB: 50, 41, 47
+/// - HEX: #32292F
 class AshWineTheme {
-  // Primary Wine Palette
-  static const Color primary = Color(0xFF6E2841); // Deep Ash Wine
-  static const Color primaryLight = Color(0xFF8F3958); // Vivid Ash Wine
-  static const Color primaryDark = Color(0xFF4C192C); // Midnight Wine
+  // Exact Anchor Color (CMYK: 0, 18, 6, 80 | RGB: 50, 41, 47 | #32292F)
+  static const Color exactAshWine = Color(0xFF32292F);
+  static const Color primary = Color(0xFF32292F);
+  static const Color primaryLight = Color(0xFF4C3E47);
+  static const Color primaryDark = Color(0xFF1E171C);
+  static const Color primaryTint = Color(0xFF6B5A65);
 
-  // Accents & Highlights
-  static const Color mauve = Color(0xFFA85B78); // Dusty Mauve
-  static const Color rose = Color(0xFFC97D98); // Soft Rose Accent
-  static const Color champagne = Color(0xFFE5B887); // Warm Railway Gold
-  static const Color entityAmber = Color(0xFFF28B50); // Radiant Proper Noun Highlight
+  // Soft accents & railway highlights
+  static const Color mauve = Color(0xFF8F6B7B);
+  static const Color rose = Color(0xFFB58D9E);
+  static const Color champagne = Color(0xFFD4A373); // Railway Champagne Gold
+  static const Color entityAmber = Color(0xFFD97736); // Proper Noun / Name Highlight
+  static const Color alertRed = Color(0xFFC04B54); // Missing child / urgent alert
 
-  // Dark Canvas & Surfaces
-  static const Color bgDark = Color(0xFF160C12); // Velvet Midnight Ash Wine
-  static const Color surfaceDark = Color(0xFF22121B); // Rich Dark Surface
-  static const Color cardDark = Color(0xFF2A1622); // Elevated Card Surface
-  static const Color cardBorderDark = Color(0x38A85B78); // Subtle Glassmorphic Border
+  // LIGHT THEME CANVASES & SURFACES (Clean, airy, comfortable)
+  static const Color bgLight = Color(0xFFFAF7F8); // Clean light linen canvas
+  static const Color surfaceLight = Color(0xFFFFFFFF); // Pure white header / surface
+  static const Color cardLight = Color(0xFFFFFFFF); // Pure white elevated card
+  static const Color cardBorderLight = Color(0xFFEADBDF); // Subtle Ash Wine hairline border
+  static const Color cardBgSecondaryLight = Color(0xFFF3ECEF); // Light ash tint container
 
-  // Light Canvas & Surfaces
-  static const Color bgLight = Color(0xFFFAF4F6); // Soft Chalk Rose White
-  static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color cardLight = Color(0xFFF5EBF0);
-  static const Color cardBorderLight = Color(0x1EA85B78);
+  static const Color textPrimaryLight = Color(0xFF32292F); // Exact Ash Wine typography
+  static const Color textSecondaryLight = Color(0xFF5E4F57); // Medium ash wine
+  static const Color textMutedLight = Color(0xFF8C7A83); // Soft muted
 
-  // Typography Colors
-  static const Color textPrimaryDark = Color(0xFFFCF6F8);
-  static const Color textSecondaryDark = Color(0xFFC4ACB6);
-  static const Color textMutedDark = Color(0xFF8B727D);
+  // DARK THEME CANVASES & SURFACES (Deep velvet ash wine)
+  static const Color bgDark = Color(0xFF1B1518);
+  static const Color surfaceDark = Color(0xFF261E23);
+  static const Color cardDark = Color(0xFF2E242A);
+  static const Color cardBorderDark = Color(0xFF473942);
+  static const Color cardBgSecondaryDark = Color(0xFF3B2F36);
 
-  static const Color textPrimaryLight = Color(0xFF25121B);
-  static const Color textSecondaryLight = Color(0xFF644350);
-  static const Color textMutedLight = Color(0xFF9E7B89);
+  static const Color textPrimaryDark = Color(0xFFFBF8FA);
+  static const Color textSecondaryDark = Color(0xFFD4C7CD);
+  static const Color textMutedDark = Color(0xFF9E8F96);
+
+  // Dynamic Theme Helpers based on BuildContext
+  static bool isDark(BuildContext context) => Theme.of(context).brightness == Brightness.dark;
+  static Color bg(BuildContext context) => isDark(context) ? bgDark : bgLight;
+  static Color surface(BuildContext context) => isDark(context) ? surfaceDark : surfaceLight;
+  static Color card(BuildContext context) => isDark(context) ? cardDark : cardLight;
+  static Color cardBorder(BuildContext context) => isDark(context) ? cardBorderDark : cardBorderLight;
+  static Color cardBgSecondary(BuildContext context) => isDark(context) ? cardBgSecondaryDark : cardBgSecondaryLight;
+  static Color textPrimary(BuildContext context) => isDark(context) ? textPrimaryDark : textPrimaryLight;
+  static Color textSecondary(BuildContext context) => isDark(context) ? textSecondaryDark : textSecondaryLight;
+  static Color textMuted(BuildContext context) => isDark(context) ? textMutedDark : textMutedLight;
 
   // Gradients
-  static const LinearGradient wineHeroGradient = LinearGradient(
+  static const LinearGradient ashWineGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFF7A2A47),
-      Color(0xFF52192F),
-      Color(0xFF330E1D),
+      Color(0xFF4C3E47),
+      Color(0xFF32292F),
+      Color(0xFF1E171C),
     ],
   );
 
-  static const LinearGradient cardGlowGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
+  static const LinearGradient wineHeroGradient = ashWineGradient;
+
+  static const LinearGradient ashWineLightGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [
-      Color(0xFF321A28),
-      Color(0xFF24131D),
+      Color(0xFFF8F2F5),
+      Color(0xFFEADBDF),
     ],
   );
 
   static const LinearGradient goldAccentGradient = LinearGradient(
     colors: [
-      Color(0xFFF2C89A),
-      Color(0xFFD69A58),
+      Color(0xFFE2B788),
+      Color(0xFFC7925B),
     ],
   );
 
   static const LinearGradient properNounGradient = LinearGradient(
     colors: [
-      Color(0xFFF59E6B),
-      Color(0xFFE86A38),
+      Color(0xFFE88A4C),
+      Color(0xFFD97736),
     ],
   );
+
+  /// Light Theme (Default: light, clean, human-designed, elegant)
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      scaffoldBackgroundColor: bgLight,
+      canvasColor: surfaceLight,
+      cardColor: cardLight,
+      colorScheme: const ColorScheme.light(
+        primary: exactAshWine,
+        onPrimary: Colors.white,
+        secondary: mauve,
+        onSecondary: Colors.white,
+        surface: surfaceLight,
+        onSurface: textPrimaryLight,
+        surfaceContainerHighest: cardBgSecondaryLight,
+      ),
+      fontFamily: 'Roboto',
+      appBarTheme: const AppBarTheme(
+        backgroundColor: surfaceLight,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: TextStyle(
+          color: textPrimaryLight,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.3,
+        ),
+        iconTheme: IconThemeData(color: exactAshWine),
+      ),
+      cardTheme: CardThemeData(
+        color: cardLight,
+        elevation: 1,
+        shadowColor: const Color(0x1432292F),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: cardBorderLight, width: 1.2),
+        ),
+      ),
+    );
+  }
 
   /// Dark Theme
   static ThemeData get darkTheme {
@@ -78,13 +141,13 @@ class AshWineTheme {
       canvasColor: surfaceDark,
       cardColor: cardDark,
       colorScheme: const ColorScheme.dark(
-        primary: primaryLight,
-        secondary: mauve,
-        surface: surfaceDark,
-        surfaceContainerHighest: cardDark,
+        primary: rose,
         onPrimary: Colors.white,
+        secondary: mauve,
         onSecondary: Colors.white,
+        surface: surfaceDark,
         onSurface: textPrimaryDark,
+        surfaceContainerHighest: cardDark,
       ),
       fontFamily: 'Roboto',
       appBarTheme: const AppBarTheme(
@@ -105,47 +168,6 @@ class AshWineTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: const BorderSide(color: cardBorderDark, width: 1),
-        ),
-      ),
-    );
-  }
-
-  /// Light Theme
-  static ThemeData get lightTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      scaffoldBackgroundColor: bgLight,
-      canvasColor: surfaceLight,
-      cardColor: cardLight,
-      colorScheme: const ColorScheme.light(
-        primary: primary,
-        secondary: mauve,
-        surface: surfaceLight,
-        surfaceContainerHighest: cardLight,
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: textPrimaryLight,
-      ),
-      fontFamily: 'Roboto',
-      appBarTheme: const AppBarTheme(
-        backgroundColor: bgLight,
-        elevation: 0,
-        centerTitle: false,
-        titleTextStyle: TextStyle(
-          color: textPrimaryLight,
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.3,
-        ),
-        iconTheme: IconThemeData(color: textPrimaryLight),
-      ),
-      cardTheme: CardThemeData(
-        color: cardLight,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: cardBorderLight, width: 1),
         ),
       ),
     );
