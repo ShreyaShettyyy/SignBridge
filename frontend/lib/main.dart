@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:sign_bridge/core/theme/ash_wine_theme.dart';
 import 'package:sign_bridge/features/auth/providers/auth_provider.dart';
 import 'package:sign_bridge/features/translate/providers/translation_provider.dart';
 import 'package:sign_bridge/features/settings/providers/settings_provider.dart';
@@ -9,7 +10,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (_) {}
   runApp(const MyApp());
 }
 
@@ -33,27 +36,10 @@ class MyApp extends StatelessWidget {
             builder: (context, child) {
               return MaterialApp(
                 debugShowCheckedModeBanner: false,
-                title: 'SignBridge',
-                themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-                theme: ThemeData(
-                  colorScheme: ColorScheme.fromSeed(
-                    seedColor: const Color(0xFF2B2D5D),
-                    brightness: Brightness.light,
-                  ),
-                  scaffoldBackgroundColor: const Color(0xFFF5F7FF),
-                  useMaterial3: true,
-                  fontFamily: 'Roboto',
-                ),
-                darkTheme: ThemeData(
-                  colorScheme: ColorScheme.fromSeed(
-                    seedColor: const Color(0xFF4B6CF7),
-                    brightness: Brightness.dark,
-                  ),
-                  scaffoldBackgroundColor: const Color(0xFF121424),
-                  cardColor: const Color(0xFF1E2138),
-                  useMaterial3: true,
-                  fontFamily: 'Roboto',
-                ),
+                title: 'SignBridge - Railway ISL Accessibility',
+                themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.dark, // Default to stunning Ash Wine Dark
+                theme: AshWineTheme.lightTheme,
+                darkTheme: AshWineTheme.darkTheme,
                 home: const SplashScreen(),
               );
             },

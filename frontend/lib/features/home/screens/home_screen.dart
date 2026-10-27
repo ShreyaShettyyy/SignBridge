@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/theme/ash_wine_theme.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../translate/screens/translate_screen.dart';
-import '../../history/screens/history_screen.dart';
 import '../../auth/screens/login_screen.dart';
+import '../../translate/providers/translation_provider.dart';
+import '../../translate/screens/translate_screen.dart';
+import '../../translate/screens/sign_language_player_screen.dart';
+import '../../vocabulary/screens/include_vocabulary_screen.dart';
+import '../../history/screens/history_screen.dart';
 import '../../saved/screens/saved_screen.dart';
 import '../../settings/screens/settings_screen.dart';
-import '../../vocabulary/screens/include_vocabulary_screen.dart';
-import '../../translate/screens/video_upload_screen.dart';
-import '../widgets/app_guide_modal.dart';
+import 'about_screen.dart';
 import 'contact_us_screen.dart';
 import 'privacy_terms_screen.dart';
-import 'about_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 
 class SignBridgeHome extends StatefulWidget {
   const SignBridgeHome({super.key});
@@ -22,17 +22,15 @@ class SignBridgeHome extends StatefulWidget {
   State<SignBridgeHome> createState() => _SignBridgeHomeState();
 }
 
-class _SignBridgeHomeState extends State<SignBridgeHome>
-    with TickerProviderStateMixin {
+class _SignBridgeHomeState extends State<SignBridgeHome> with TickerProviderStateMixin {
   int _selectedIndex = 0;
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
 
-
   final List<Widget> _screens = const [
     _HomeTab(),
-    TranslateScreen(),   
-    IncludeVocabularyScreen(),  
+    TranslateScreen(),
+    IncludeVocabularyScreen(),
     HistoryScreen(),
   ];
 
@@ -40,24 +38,11 @@ class _SignBridgeHomeState extends State<SignBridgeHome>
   void initState() {
     super.initState();
     _fadeCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 280));
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+    );
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeIn);
     _fadeCtrl.forward();
-    
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkFirstTime();
-    });
-  }
-
-  Future<void> _checkFirstTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasSeenGuide = prefs.getBool('has_seen_guide') ?? false;
-    if (!hasSeenGuide) {
-      if (mounted) {
-        showAppGuide(context);
-      }
-      await prefs.setBool('has_seen_guide', true);
-    }
   }
 
   @override
@@ -76,7 +61,7 @@ class _SignBridgeHomeState extends State<SignBridgeHome>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: AshWineTheme.bgDark,
       body: FadeTransition(
         opacity: _fadeAnim,
         child: _screens[_selectedIndex],
@@ -89,37 +74,35 @@ class _SignBridgeHomeState extends State<SignBridgeHome>
   }
 }
 
-
 class _BottomNav extends StatelessWidget {
   const _BottomNav({required this.selectedIndex, required this.onTap});
 
   final int selectedIndex;
   final ValueChanged<int> onTap;
 
-  static const accentColor = Color(0xFF4B6CF7);
-
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AshWineTheme.surfaceDark,
+        border: const Border(top: BorderSide(color: AshWineTheme.cardBorderDark)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 20,
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 16,
             offset: const Offset(0, -4),
           ),
         ],
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _navItem(0, Icons.home_outlined, Icons.home, 'Home'),
-              _navItem(1, Icons.camera_alt_outlined, Icons.camera_alt, 'SLT'),
-              _navItem(2, Icons.menu_book_outlined, Icons.menu_book_rounded, 'Dictionary'),
+              _navItem(1, Icons.campaign_outlined, Icons.campaign, 'Announce'),
+              _navItem(2, Icons.dataset_outlined, Icons.dataset, 'ISL Studio'),
               _navItem(3, Icons.history_outlined, Icons.history, 'History'),
             ],
           ),
@@ -128,27 +111,28 @@ class _BottomNav extends StatelessWidget {
     );
   }
 
-  Widget _navItem(
-      int index, IconData icon, IconData activeIcon, String label) {
+  Widget _navItem(int index, IconData icon, IconData activeIcon, String label) {
     final isSelected = selectedIndex == index;
     return GestureDetector(
       onTap: () => onTap(index),
+      behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.symmetric(
-            horizontal: isSelected ? 18 : 12, vertical: 10),
+          horizontal: isSelected ? 16 : 12,
+          vertical: 8,
+        ),
         decoration: BoxDecoration(
-          color: isSelected
-              ? accentColor.withValues(alpha: 0.12)
-              : Colors.transparent,
+          color: isSelected ? AshWineTheme.primaryLight.withOpacity(0.3) : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
+          border: isSelected ? Border.all(color: AshWineTheme.rose.withOpacity(0.4)) : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               isSelected ? activeIcon : icon,
-              color: isSelected ? accentColor : Colors.grey,
+              color: isSelected ? AshWineTheme.champagne : AshWineTheme.textMutedDark,
               size: 22,
             ),
             if (isSelected) ...[
@@ -156,9 +140,9 @@ class _BottomNav extends StatelessWidget {
               Text(
                 label,
                 style: const TextStyle(
-                  color: accentColor,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12.5,
                 ),
               ),
             ],
@@ -169,34 +153,30 @@ class _BottomNav extends StatelessWidget {
   }
 }
 
-
 class _HomeTab extends StatelessWidget {
   const _HomeTab();
-
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final String initial = (auth.email ?? 'G')[0].toUpperCase();
+    final provider = context.watch<TranslationProvider>();
+    final String initial = (auth.email ?? 'S')[0].toUpperCase();
     final String greeting = _greeting();
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: AshWineTheme.bgDark,
       body: Column(
         children: [
+          // App Header
           _AppHeader(
             initial: initial,
             greeting: greeting,
             email: auth.email,
             isLoggedIn: auth.isLoggedIn,
+            stationName: provider.selectedStationName,
+            stationCode: provider.selectedStationCode,
             onLogout: () async {
               await context.read<AuthProvider>().logout();
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (r) => false,
-                );
-              }
             },
             onLogin: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -205,60 +185,86 @@ class _HomeTab extends StatelessWidget {
 
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Hero banner
+                  // Hero Banner
                   _HeroBanner(
                     onGetStarted: () {
-                      final home = context
-                          .findAncestorStateOfType<_SignBridgeHomeState>();
+                      final home = context.findAncestorStateOfType<_SignBridgeHomeState>();
+                      home?._onNavTap(1);
+                    },
+                    onOpenPlayer: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SignLanguagePlayerScreen()),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Spotlight Alert Demo: Missing Child Shreya
+                  _FeaturedAnnouncementCard(
+                    onTestShreya: () {
+                      provider.loadPreset({
+                        'id': 'ann_shreya_child_alert',
+                        'station_code': 'SBC',
+                        'station_name': 'KSR Bengaluru City Junction',
+                        'transcription':
+                            'Attention please. A 6-year-old child named Shreya has been found near platform number 2. She is safe with the Railway Protection Force. Parents or guardians are requested to immediately report to the Station Master office.',
+                        'translations': {
+                          'kn':
+                              'ದಯವಿಟ್ಟು ಗಮನಿಸಿ. ಪ್ಲಾಟ್‌ಫಾರ್ಮ್ ಸಂಖ್ಯೆ 2 ರ ಬಳಿ ಶ್ರೇಯಾ ಹೆಸರಿನ 6 ವರ್ಷದ ಬಾಲಕಿ ಕಂಡುಬಂದಿದ್ದಾಳೆ. ಆಕೆ ರೈಲ್ವೆ ರಕ್ಷಣಾ ಪಡೆಯ ಸಿಬ್ಬಂದಿಯೊಂದಿಗೆ ಸುರಕ್ಷಿತವಾಗಿದ್ದಾಳೆ. ಪೋಷಕರು ಅಥವಾ ಸಂಬಂಧಿಕರು ತಕ್ಷಣವೇ ಸ್ಟೇಷನ್ ಮಾಸ್ಟರ್ ಕಚೇರಿಯನ್ನು ಸಂಪರ್ಕಿಸಲು ವಿನಂತಿಸಲಾಗಿದೆ.',
+                          'hi':
+                              'कृपया ध्यान दें। प्लेटफार्म नंबर 2 के पास श्रेया नाम की 6 वर्षीय बच्ची मिली है। वह रेलवे सुरक्षा बल के पास सुरक्षित है। माता-पिता तुरंत स्टेशन मास्टर कार्यालय में संपर्क करें।',
+                        },
+                        'named_entities': [
+                          {
+                            'text': 'Shreya',
+                            'entity_type': 'PERSON',
+                            'label': 'Child Name',
+                            'is_name': true,
+                            'fingerspell': ['S', 'H', 'R', 'E', 'Y', 'A'],
+                            'explanation': 'Proper Noun: Hand gesture spells S-H-R-E-Y-A letter by letter in ISL.'
+                          },
+                          {'text': '2', 'entity_type': 'PLATFORM', 'label': 'Platform 2', 'fingerspell': ['2']}
+                        ]
+                      });
+                      final home = context.findAncestorStateOfType<_SignBridgeHomeState>();
                       home?._onNavTap(1);
                     },
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 22),
 
-                  // Mode selector: SLT + SLP
-                  const _SectionLabel(label: 'Choose mode'),
+                  // Core Modes Grid
+                  const _SectionLabel(label: 'Railway Accessibility Modules'),
                   const SizedBox(height: 12),
-                  _ModeGrid(
-                    onSLT: () {
-                      final home = context
-                          .findAncestorStateOfType<_SignBridgeHomeState>();
+                  _ModulesGrid(
+                    onAnnounce: () {
+                      final home = context.findAncestorStateOfType<_SignBridgeHomeState>();
                       home?._onNavTap(1);
                     },
-                    onSLP: () {
-                      final home = context
-                          .findAncestorStateOfType<_SignBridgeHomeState>();
+                    onDataset: () {
+                      final home = context.findAncestorStateOfType<_SignBridgeHomeState>();
                       home?._onNavTap(2);
                     },
-                    onVideoUpload: () {
+                    onPlayer: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const VideoUploadScreen(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const SignLanguagePlayerScreen()),
                       );
                     },
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 22),
 
-                  // Quick actions
-                  const _SectionLabel(label: 'Quick actions'),
+                  // Quick Actions Row
+                  const _SectionLabel(label: 'Quick navigation'),
                   const SizedBox(height: 12),
-                  _QuickActions(
-                    onVideoUpload: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const VideoUploadScreen(),
-                        ),
-                      );
-                    },
+                  _QuickActionsRow(
                     onHistory: () {
-                      final home = context
-                          .findAncestorStateOfType<_SignBridgeHomeState>();
+                      final home = context.findAncestorStateOfType<_SignBridgeHomeState>();
                       home?._onNavTap(3);
                     },
                     onSaved: () {
@@ -271,21 +277,12 @@ class _HomeTab extends StatelessWidget {
                         MaterialPageRoute(builder: (_) => const SettingsScreen()),
                       );
                     },
+                    onAbout: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const AboutSignBridgeScreen()),
+                      );
+                    },
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // Activity stats
-                  const _SectionLabel(label: 'Your activity'),
-                  const SizedBox(height: 12),
-                  const _StatsRow(),
-
-                  const SizedBox(height: 24),
-
-                  // Support section
-                  const _SectionLabel(label: 'Support'),
-                  const SizedBox(height: 12),
-                  const _SupportCard(),
                 ],
               ),
             ),
@@ -303,13 +300,14 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
-
 class _AppHeader extends StatelessWidget {
   const _AppHeader({
     required this.initial,
     required this.greeting,
     required this.email,
     required this.isLoggedIn,
+    required this.stationName,
+    required this.stationCode,
     required this.onLogout,
     required this.onLogin,
   });
@@ -318,115 +316,118 @@ class _AppHeader extends StatelessWidget {
   final String greeting;
   final String? email;
   final bool isLoggedIn;
+  final String stationName;
+  final String stationCode;
   final VoidCallback onLogout;
   final VoidCallback onLogin;
-
-  static const primaryColor = Color(0xFF1E2158);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: primaryColor,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: AshWineTheme.surfaceDark,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
+        border: const Border(bottom: BorderSide(color: AshWineTheme.cardBorderDark)),
       ),
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Brand row + avatar
               Row(
                 children: [
-                  // Brand
                   Container(
-                    padding: const EdgeInsets.all(7),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      gradient: AshWineTheme.wineHeroGradient,
                       borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AshWineTheme.rose),
                     ),
-                    child: const Icon(Icons.sign_language,
-                        color: Colors.white, size: 20),
+                    child: const Icon(Icons.sign_language, color: Colors.white, size: 20),
                   ),
                   const SizedBox(width: 10),
-                  const Text(
-                    'SignBridge',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'SignBridge',
+                        style: TextStyle(
+                          color: AshWineTheme.textPrimaryDark,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      Text(
+                        'Railway Multilingual & ISL System',
+                        style: TextStyle(color: AshWineTheme.rose, fontSize: 11),
+                      ),
+                    ],
                   ),
                   const Spacer(),
-
-                  // Avatar / login
-                  if (isLoggedIn)
-                    PopupMenuButton<String>(
-                      onSelected: (v) {
-                        if (v == 'logout') onLogout();
-                      },
-                      itemBuilder: (_) => [
-                        PopupMenuItem(
-                          value: 'email',
-                          enabled: false,
-                          child: Text(email ?? '',
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                        const PopupMenuDivider(),
-                        const PopupMenuItem(
-                          value: 'logout',
-                          child: Row(
-                            children: [
-                              Icon(Icons.logout, color: Colors.red, size: 18),
-                              SizedBox(width: 8),
-                              Text('Logout',
-                                  style: TextStyle(color: Colors.red)),
-                            ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AshWineTheme.cardDark,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AshWineTheme.cardBorderDark),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.train, size: 14, color: AshWineTheme.champagne),
+                        const SizedBox(width: 4),
+                        Text(
+                          stationCode,
+                          style: const TextStyle(
+                            color: AshWineTheme.champagne,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
-                        child: Text(
-                          initial,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15),
-                        ),
-                      ),
-                    )
-                  else
-                    TextButton(
-                      onPressed: onLogin,
-                      child: const Text('Login',
-                          style: TextStyle(color: Colors.white)),
                     ),
+                  ),
                 ],
               ),
-
               const SizedBox(height: 14),
-
-              // Greeting
-              Text(
-                greeting,
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.65), fontSize: 13),
-              ),
-              const SizedBox(height: 2),
-              const Text(
-                'Welcome back!',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        greeting,
+                        style: TextStyle(color: AshWineTheme.textMutedDark, fontSize: 12),
+                      ),
+                      Text(
+                        stationName,
+                        style: const TextStyle(
+                          color: AshWineTheme.textPrimaryDark,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  CircleAvatar(
+                    radius: 17,
+                    backgroundColor: AshWineTheme.primaryLight,
+                    child: Text(
+                      initial,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -436,101 +437,104 @@ class _AppHeader extends StatelessWidget {
   }
 }
 
-
 class _HeroBanner extends StatelessWidget {
-  const _HeroBanner({required this.onGetStarted});
+  const _HeroBanner({required this.onGetStarted, required this.onOpenPlayer});
   final VoidCallback onGetStarted;
+  final VoidCallback onOpenPlayer;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2B2D5D), Color(0xFF4B6CF7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
+        gradient: AshWineTheme.wineHeroGradient,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AshWineTheme.rose.withOpacity(0.6), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AshWineTheme.primaryDark.withOpacity(0.5),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Decorative circles
-          Positioned(
-            top: -20, right: -20,
-            child: Container(
-              width: 100, height: 100,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
-                shape: BoxShape.circle,
-              ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(8),
             ),
-          ),
-          Positioned(
-            bottom: -10, right: 50,
-            child: Container(
-              width: 60, height: 60,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.04),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'AI-Powered',
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.mic, size: 13, color: AshWineTheme.champagne),
+                SizedBox(width: 5),
+                Text(
+                  'Acoustic Audio to ISL Gestures',
                   style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      letterSpacing: 0.5),
+                    color: AshWineTheme.champagne,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Sign Language\nBridge System',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  height: 1.3,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Translate signs to text, or convert text back to sign language poses.',
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 13,
-                    height: 1.5),
-              ),
-              const SizedBox(height: 18),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Railway Station Announcements Accessibility',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              height: 1.25,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Paste YouTube railway announcement videos or speak. Translates sound into authentic Kannada, Hindi, and Indian Sign Language (ISL) with letter-by-letter fingerspelling for proper names.',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.85),
+              fontSize: 12.5,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF2B2D5D),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 11),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                  backgroundColor: AshWineTheme.champagne,
+                  foregroundColor: AshWineTheme.bgDark,
                   elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                ),
+                icon: const Icon(Icons.play_arrow, size: 18),
+                label: const Text(
+                  'Process Announcement',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                 ),
                 onPressed: onGetStarted,
-                icon: const Icon(Icons.play_arrow_rounded, size: 18),
-                label: const Text(
-                  'Get Started',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white70),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 ),
+                icon: const Icon(Icons.sign_language, size: 16),
+                label: const Text(
+                  'ISL Player',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
+                onPressed: onOpenPlayer,
               ),
             ],
           ),
@@ -540,16 +544,148 @@ class _HeroBanner extends StatelessWidget {
   }
 }
 
+class _FeaturedAnnouncementCard extends StatelessWidget {
+  const _FeaturedAnnouncementCard({required this.onTestShreya});
+  final VoidCallback onTestShreya;
 
-class _ModeGrid extends StatelessWidget {
-  const _ModeGrid({
-    required this.onSLT,
-    required this.onSLP,
-    required this.onVideoUpload,
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AshWineTheme.surfaceDark,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AshWineTheme.entityAmber.withOpacity(0.6), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AshWineTheme.entityAmber.withOpacity(0.12),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: AshWineTheme.properNounGradient,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.child_care, size: 14, color: Colors.white),
+                    SizedBox(width: 5),
+                    Text(
+                      'FEATURED SPOTLIGHT ALERT',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AshWineTheme.cardDark,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'KSR Bengaluru SBC',
+                  style: TextStyle(color: AshWineTheme.champagne, fontSize: 11, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Missing Child Shreya Found Announcement',
+            style: TextStyle(
+              color: AshWineTheme.textPrimaryDark,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '"Attention please. A 6-year-old child named Shreya has been found near platform 2... safe with RPF."',
+            style: TextStyle(
+              color: AshWineTheme.textSecondaryDark,
+              fontSize: 12.5,
+              fontStyle: FontStyle.italic,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AshWineTheme.entityAmber.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'NER Proper Noun: SHREYA',
+                  style: TextStyle(color: AshWineTheme.entityAmber, fontSize: 11, fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AshWineTheme.primaryDark,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'Fingerspelling: S-H-R-E-Y-A',
+                  style: TextStyle(color: AshWineTheme.rose, fontSize: 11, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AshWineTheme.primaryLight,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.play_circle_filled, size: 18),
+              label: const Text(
+                'Load Alert & Translate in Indian Sign Language',
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+              ),
+              onPressed: onTestShreya,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ModulesGrid extends StatelessWidget {
+  const _ModulesGrid({
+    required this.onAnnounce,
+    required this.onDataset,
+    required this.onPlayer,
   });
-  final VoidCallback onSLT;
-  final VoidCallback onSLP;
-  final VoidCallback onVideoUpload;
+
+  final VoidCallback onAnnounce;
+  final VoidCallback onDataset;
+  final VoidCallback onPlayer;
 
   @override
   Widget build(BuildContext context) {
@@ -558,253 +694,99 @@ class _ModeGrid extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: _ModeCard(
-                icon: Icons.camera_alt_rounded,
-                iconBg: const Color(0xFFE6FAF3),
-                iconColor: const Color(0xFF0F6E56),
-                title: 'Live Camera',
-                subtitle: 'Real-time SLT',
-                description:
-                    'Point camera at signs for real-time kinematic detection.',
-                chipLabel: 'Live Stream',
-                chipBg: const Color(0xFFE6FAF3),
-                chipColor: const Color(0xFF0F6E56),
-                onTap: onSLT,
+              child: _moduleCard(
+                title: 'YouTube Audio STT',
+                subtitle: 'Extract acoustic sound and translate',
+                icon: Icons.ondemand_video,
+                badge: 'Input Sound',
+                color: AshWineTheme.primaryLight,
+                onTap: onAnnounce,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _ModeCard(
-                icon: Icons.video_collection_rounded,
-                iconBg: const Color(0xFFFFF0F5),
-                iconColor: const Color(0xFFD63384),
-                title: 'Upload Video',
-                subtitle: 'Continuous ISL',
-                description:
-                    'Upload video clips or reels with caption masking & translation.',
-                chipLabel: 'Upload Video',
-                chipBg: const Color(0xFFFFF0F5),
-                chipColor: const Color(0xFFD63384),
-                onTap: onVideoUpload,
+              child: _moduleCard(
+                title: 'ISL Gesture Player',
+                subtitle: 'Sequenced gestures & letter fingerspelling',
+                icon: Icons.sign_language,
+                badge: 'Two-Handed ISL',
+                color: AshWineTheme.rose,
+                onTap: onPlayer,
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        _WideModeCard(
-          icon: Icons.menu_book_rounded,
-          iconBg: const Color(0xFFEEF2FF),
-          iconColor: const Color(0xFF4B6CF7),
-          title: 'Dictionary & Vocabulary',
-          subtitle: '263 Signs • AI4Bharat INCLUDE',
-          description:
-              'Explore standard Indian Sign Language vocabulary with category filters.',
-          chipLabel: 'Explore Signs',
-          chipBg: const Color(0xFFEEF2FF),
-          chipColor: const Color(0xFF4B6CF7),
-          onTap: onSLP,
+        _moduleCard(
+          title: 'Karnataka Announcement Dataset Studio',
+          subtitle: 'KSR Bengaluru, Mysuru, Hubballi • Attach custom recorded sign videos',
+          icon: Icons.dataset,
+          badge: 'Dataset Builder',
+          color: AshWineTheme.champagne,
+          onTap: onDataset,
         ),
       ],
     );
   }
-}
 
-class _WideModeCard extends StatelessWidget {
-  const _WideModeCard({
-    required this.icon,
-    required this.iconBg,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.description,
-    required this.chipLabel,
-    required this.chipBg,
-    required this.chipColor,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color iconBg;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final String description;
-  final String chipLabel;
-  final Color chipBg;
-  final Color chipColor;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget _moduleCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required String badge,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
       onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: iconColor, size: 22),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E2158),
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: chipBg,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          chipLabel,
-                          style: TextStyle(
-                            color: chipColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.black54,
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ModeCard extends StatelessWidget {
-  const _ModeCard({
-    required this.icon,
-    required this.iconBg,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.description,
-    required this.chipLabel,
-    required this.chipBg,
-    required this.chipColor,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color iconBg;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final String description;
-  final String chipLabel;
-  final Color chipBg;
-  final Color chipColor;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AshWineTheme.surfaceDark,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
+          border: Border.all(color: AshWineTheme.cardBorderDark),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 44, height: 44,
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: iconColor, size: 22),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: AshWineTheme.cardDark,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    badge,
+                    style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E2158))),
-            const SizedBox(height: 2),
-            Text(subtitle,
-                style: const TextStyle(
-                    fontSize: 11, color: Colors.grey)),
-            const SizedBox(height: 8),
-            Text(description,
-                style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black54,
-                    height: 1.5)),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: chipBg,
-                borderRadius: BorderRadius.circular(20),
+            Text(
+              title,
+              style: const TextStyle(
+                color: AshWineTheme.textPrimaryDark,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
               ),
-              child: Text(chipLabel,
-                  style: TextStyle(
-                      color: chipColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600)),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(color: AshWineTheme.textSecondaryDark, fontSize: 11.5, height: 1.3),
             ),
           ],
         ),
@@ -813,325 +795,58 @@ class _ModeCard extends StatelessWidget {
   }
 }
 
-
-class _QuickActions extends StatelessWidget {
-  const _QuickActions({
-    required this.onVideoUpload,
+class _QuickActionsRow extends StatelessWidget {
+  const _QuickActionsRow({
     required this.onHistory,
     required this.onSaved,
     required this.onSettings,
+    required this.onAbout,
   });
 
-  final VoidCallback onVideoUpload;
   final VoidCallback onHistory;
   final VoidCallback onSaved;
   final VoidCallback onSettings;
+  final VoidCallback onAbout;
 
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(
-          child: _QAButton(
-            icon: Icons.video_file_rounded,
-            iconBg: const Color(0xFFFFF0F5),
-            iconColor: const Color(0xFFD63384),
-            label: 'Upload Video',
-            onTap: onVideoUpload,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _QAButton(
-            icon: Icons.history_rounded,
-            iconBg: const Color(0xFFFEF3E2),
-            iconColor: const Color(0xFFBA7517),
-            label: 'History',
-            onTap: onHistory,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _QAButton(
-            icon: Icons.bookmark_outline_rounded,
-            iconBg: const Color(0xFFFBEAF0),
-            iconColor: const Color(0xFF993556),
-            label: 'Saved',
-            onTap: onSaved,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _QAButton(
-            icon: Icons.settings_outlined,
-            iconBg: const Color(0xFFF1EFE8),
-            iconColor: const Color(0xFF5F5E5A),
-            label: 'Settings',
-            onTap: onSettings,
-          ),
-        ),
+        _quickAction(Icons.history, 'History', onHistory),
+        _quickAction(Icons.bookmark_border, 'Saved', onSaved),
+        _quickAction(Icons.settings_outlined, 'Settings', onSettings),
+        _quickAction(Icons.info_outline, 'About', onAbout),
       ],
     );
   }
-}
 
-class _QAButton extends StatelessWidget {
-  const _QAButton({
-    required this.icon,
-    required this.iconBg,
-    required this.iconColor,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color iconBg;
-  final Color iconColor;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget _quickAction(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        width: 78,
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AshWineTheme.surfaceDark,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: Border.all(color: AshWineTheme.cardBorderDark),
         ),
         child: Column(
           children: [
-            Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: iconColor, size: 18),
+            Icon(icon, color: AshWineTheme.champagne, size: 22),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: const TextStyle(color: AshWineTheme.textPrimaryDark, fontSize: 11, fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 8),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 12, color: Colors.black54)),
           ],
         ),
       ),
     );
   }
 }
-
-
-class _StatsRow extends StatelessWidget {
-  const _StatsRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        Expanded(
-            child: _StatCard(value: '142', label: 'Translations\ndone')),
-        SizedBox(width: 10),
-        Expanded(
-            child: _StatCard(value: '38', label: 'Signs\nproduced')),
-        SizedBox(width: 10),
-        Expanded(
-            child: _StatCard(value: '7', label: 'Days\nactive')),
-      ],
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({required this.value, required this.label});
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEEF2FF),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E2158))),
-          const SizedBox(height: 4),
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 11,
-                  color: Colors.black54,
-                  height: 1.4)),
-        ],
-      ),
-    );
-  }
-}
-
-
-class _SupportCard extends StatelessWidget {
-  const _SupportCard();
-
-  List<_SupportItem> _buildItems(BuildContext context) {
-    return [
-      _SupportItem(
-        icon: Icons.help_outline_rounded,
-        iconBg: const Color(0xFFEEF2FF),
-        iconColor: const Color(0xFF4B6CF7),
-        title: 'Help & Guide',
-        subtitle: 'How to use SLT and SLP modes',
-        onTap: () => showAppGuide(context),
-      ),
-      _SupportItem(
-        icon: Icons.mail_outline_rounded,
-        iconBg: const Color(0xFFE6FAF3),
-        iconColor: const Color(0xFF0F6E56),
-        title: 'Contact Us',
-        subtitle: 'Reach our support team',
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const ContactUsScreen()),
-          );
-        },
-      ),
-      _SupportItem(
-        icon: Icons.shield_outlined,
-        iconBg: const Color(0xFFFEF3E2),
-        iconColor: const Color(0xFFBA7517),
-        title: 'Privacy & Terms',
-        subtitle: 'Legal info and data usage',
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const PrivacyTermsScreen()),
-          );
-        },
-      ),
-      _SupportItem(
-        icon: Icons.info_outline_rounded,
-        iconBg: const Color(0xFFF1EFE8),
-        iconColor: const Color(0xFF5F5E5A),
-        title: 'About SignBridge',
-        subtitle: 'Built with ❤️ for accessible communication',
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const AboutSignBridgeScreen()),
-          );
-        },
-      ),
-    ];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final items = _buildItems(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        children: items.asMap().entries.map((entry) {
-          final isLast = entry.key == items.length - 1;
-          final item = entry.value;
-          return Column(
-            children: [
-              InkWell(
-                onTap: item.onTap,
-                borderRadius: BorderRadius.vertical(
-                  top: entry.key == 0
-                      ? const Radius.circular(16)
-                      : Radius.zero,
-                  bottom: isLast
-                      ? const Radius.circular(16)
-                      : Radius.zero,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 36, height: 36,
-                        decoration: BoxDecoration(
-                          color: item.iconBg,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(item.icon,
-                            color: item.iconColor, size: 18),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(item.title,
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF1E2158))),
-                            const SizedBox(height: 2),
-                            Text(item.subtitle,
-                                style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.black45)),
-                          ],
-                        ),
-                      ),
-                      const Icon(Icons.chevron_right_rounded,
-                          color: Colors.black26, size: 20),
-                    ],
-                  ),
-                ),
-              ),
-              if (!isLast)
-                const Divider(height: 1, indent: 66, endIndent: 16),
-            ],
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-class _SupportItem {
-  const _SupportItem({
-    required this.icon,
-    required this.iconBg,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color iconBg;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-}
-
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.label});
@@ -1140,14 +855,13 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      label.toUpperCase(),
+      label,
       style: const TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        color: Colors.black45,
-        letterSpacing: 0.7,
+        color: AshWineTheme.textPrimaryDark,
+        fontSize: 14.5,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.2,
       ),
     );
   }
 }
-

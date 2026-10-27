@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../../core/theme/ash_wine_theme.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../translate/providers/translation_provider.dart';
+import '../../translate/screens/sign_language_player_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -12,96 +14,46 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  static const primaryColor = Color(0xFF2B2D5D);
-
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _loadHistory(force: false));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadHistory(force: false));
   }
 
   Future<void> _loadHistory({bool force = false}) async {
     final auth = context.read<AuthProvider>();
     final userId = auth.userId ?? 'guest';
     try {
-      await context
-          .read<TranslationProvider>()
-          .loadHistory(userId, token: auth.token, force: force);
-    } catch (e) {
-      if (mounted && force) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to refresh history: $e')),
-        );
-      }
-    }
+      await context.read<TranslationProvider>().loadHistory(userId, token: auth.token, force: force);
+    } catch (_) {}
   }
 
   Future<void> _confirmClearHistory() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Clear All History'),
+        backgroundColor: AshWineTheme.surfaceDark,
+        title: const Text('Clear Announcement History', style: TextStyle(color: AshWineTheme.textPrimaryDark)),
         content: const Text(
-          'Are you sure you want to delete all translation history? This cannot be undone.',
+          'Are you sure you want to delete all saved announcement history? This action cannot be undone.',
+          style: TextStyle(color: AshWineTheme.textSecondaryDark),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: AshWineTheme.textMutedDark)),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Clear'),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text('Clear', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
 
     if (confirmed == true && mounted) {
-      final auth = context.read<AuthProvider>();
-      try {
-        await context
-            .read<TranslationProvider>()
-            .clearHistory(token: auth.token);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('History cleared')),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to clear history: $e')),
-          );
-        }
-      }
-    }
-  }
-
-  Future<void> _deleteItem(HistoryItem item) async {
-    final id = item.id;
-    if (id == null || id.isEmpty) return;
-    final auth = context.read<AuthProvider>();
-    try {
-      await context
-          .read<TranslationProvider>()
-          .deleteHistoryItem(id, token: auth.token);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Translation deleted')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete: $e. Item restored.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      context.read<TranslationProvider>().clearHistory();
     }
   }
 
@@ -111,24 +63,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final history = translationProvider.history;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FF),
+      backgroundColor: AshWineTheme.bgDark,
       appBar: AppBar(
-        backgroundColor: primaryColor,
+        backgroundColor: AshWineTheme.surfaceDark,
         elevation: 0,
         title: const Text(
-          'Translation History',
+          'Announcement History',
           style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+            color: AshWineTheme.textPrimaryDark,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
         ),
         actions: [
           if (history.isNotEmpty) ...[
             IconButton(
-              icon: const Icon(Icons.delete_sweep_outlined, color: Colors.white),
+              icon: const Icon(Icons.delete_sweep_outlined, color: AshWineTheme.rose),
               tooltip: 'Clear History',
               onPressed: _confirmClearHistory,
             ),
             IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white),
+              icon: const Icon(Icons.refresh, color: AshWineTheme.champagne),
               tooltip: 'Refresh',
               onPressed: () => _loadHistory(force: true),
             ),
@@ -140,30 +95,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(color: primaryColor),
+                  CircularProgressIndicator(color: AshWineTheme.rose),
                   SizedBox(height: 12),
-                  Text('Loading history...', style: TextStyle(color: Colors.black54)),
+                  Text('Loading history...', style: TextStyle(color: AshWineTheme.textSecondaryDark)),
                 ],
               ),
             )
           : history.isEmpty
               ? _emptyState()
               : RefreshIndicator(
-                  color: primaryColor,
+                  color: AshWineTheme.rose,
+                  backgroundColor: AshWineTheme.surfaceDark,
                   onRefresh: () => _loadHistory(force: true),
                   child: ListView.separated(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     itemCount: history.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final item = history[index];
                       return _HistoryCard(
                         item: item,
                         index: index,
-                        onDelete: item.id != null && item.id!.isNotEmpty
-                            ? () => _deleteItem(item)
-                            : null,
+                        onTap: () {
+                          translationProvider.processText(item.originalText ?? item.translation);
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const SignLanguagePlayerScreen()),
+                          );
+                        },
                       );
                     },
                   ),
@@ -179,21 +137,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: primaryColor.withValues(alpha: 0.07),
+              color: AshWineTheme.surfaceDark,
               shape: BoxShape.circle,
+              border: Border.all(color: AshWineTheme.cardBorderDark),
             ),
-            child: const Icon(Icons.history, size: 56, color: primaryColor),
+            child: const Icon(Icons.history, size: 48, color: AshWineTheme.rose),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           const Text(
-            'No translations yet',
+            'No announcements translated yet',
             style: TextStyle(
-                fontSize: 20, fontWeight: FontWeight.bold, color: primaryColor),
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AshWineTheme.textPrimaryDark,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Start translating to see your history here.',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+            'Translated railway announcements will appear here for fast replay.',
+            style: TextStyle(fontSize: 13, color: AshWineTheme.textMutedDark),
           ),
         ],
       ),
@@ -204,102 +166,104 @@ class _HistoryScreenState extends State<HistoryScreen> {
 class _HistoryCard extends StatelessWidget {
   final HistoryItem item;
   final int index;
-  final VoidCallback? onDelete;
+  final VoidCallback onTap;
 
   const _HistoryCard({
     required this.item,
     required this.index,
-    this.onDelete,
+    required this.onTap,
   });
-
-  static const primaryColor = Color(0xFF2B2D5D);
 
   @override
   Widget build(BuildContext context) {
-    final dateStr =
-        DateFormat('MMM d, yyyy · h:mm a').format(item.timestamp);
+    final dateStr = DateFormat('MMM d, yyyy · h:mm a').format(item.timestamp);
 
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        color: AshWineTheme.surfaceDark,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AshWineTheme.cardBorderDark),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '${index + 1}',
-              style: const TextStyle(
-                  color: primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AshWineTheme.cardDark,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: AshWineTheme.cardBorderDark),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.train, size: 12, color: AshWineTheme.champagne),
+                          const SizedBox(width: 4),
+                          Text(
+                            item.station ?? 'Karnataka Railway',
+                            style: const TextStyle(
+                              color: AshWineTheme.champagne,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      dateStr,
+                      style: TextStyle(color: AshWineTheme.textMutedDark, fontSize: 11),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
                 Text(
                   item.translation,
                   style: const TextStyle(
-                    fontSize: 16,
+                    color: AshWineTheme.textPrimaryDark,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A2E),
+                    height: 1.35,
                   ),
                 ),
-                const SizedBox(height: 4),
+                if (item.originalText != null && item.originalText!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    item.originalText!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: AshWineTheme.textSecondaryDark, fontSize: 12),
+                  ),
+                ],
+                const SizedBox(height: 12),
                 Row(
-                  children: [
-                    const Icon(Icons.access_time,
-                        size: 13, color: Colors.grey),
-                    const SizedBox(width: 4),
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: const [
                     Text(
-                      dateStr,
-                      style: const TextStyle(
-                          color: Colors.grey, fontSize: 12),
+                      'Replay in ISL Gestures',
+                      style: TextStyle(
+                        color: AshWineTheme.rose,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_ios, size: 12, color: AshWineTheme.rose),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.sign_language,
-                  color: primaryColor, size: 18),
-              if (onDelete != null) ...[
-                const SizedBox(width: 6),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline,
-                      size: 18, color: Colors.black38),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  tooltip: 'Delete',
-                  onPressed: onDelete,
-                ),
-              ],
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

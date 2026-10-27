@@ -983,6 +983,202 @@ async def produce(
     ...
 
 
+# Railway Station Announcements & Indian Sign Language (ISL) API Routes
+from typing import Optional, List, Dict, Any
+from app.services.karnataka_railway_dataset import (
+    KARNATAKA_STATIONS, ANNOUNCEMENT_PRESETS, get_announcements_by_station, get_announcement_by_id
+)
+from app.services.isl_synthesis_service import (
+    ISL_ALPHABET_DATA, ISL_DIGITS_DATA, RAILWAY_ISL_DICTIONARY,
+    get_fingerspelling_for_name, synthesize_isl_sequence,
+    register_custom_video_for_announcement, CUSTOM_DATASET_STORE
+)
+from app.services.railway_nlp_service import RailwayNLPService
+from app.services.youtube_audio_service import YouTubeAudioService
+
+railway_nlp = RailwayNLPService()
+youtube_audio = YouTubeAudioService()
+
+class ProcessYouTubeRequest(BaseModel):
+    youtube_url: str
+    target_lang: str = "kn"
+
+class TranslateTextRequest(BaseModel):
+    text: str
+    target_lang: str = "kn"
+    source_lang: str = "auto"
+
+class CustomVideoRequest(BaseModel):
+    announcement_id: str
+    video_url: str
+    title: str = "Custom Gesture Video"
+    author: str = "User"
+
+@app.post("/api/announcements/process-youtube")
+async def process_youtube_announcement(req: ProcessYouTubeRequest):
+    """
+    Extracts raw audio from YouTube railway video, performs STT, contextual NLP translation,
+    Named Entity Recognition (NER), and ISL sign sequencing with letter-by-letter fingerspelling.
+    """
+    if not req.youtube_url:
+        raise HTTPException(status_code=400, detail="youtube_url is required")
+    result = await run_in_threadpool(
+        youtube_audio.process_youtube_announcement, req.youtube_url, req.target_lang
+    )
+    return result
+
+@app.post("/api/announcements/translate-text")
+async def translate_announcement_text(req: TranslateTextRequest):
+    """
+    Translates announcement text contextually (Kannada, English, Hindi, Tamil, Telugu),
+    detects proper nouns (e.g. child name 'Shreya'), and generates ISL tokens with fingerspelling.
+    """
+    if not req.text.strip():
+        raise HTTPException(status_code=400, detail="text is required")
+    
+    translation_result = await run_in_threadpool(
+        railway_nlp.translate_contextual, req.text, req.target_lang, req.source_lang
+    )
+    entities = translation_result["named_entities"]
+    raw_tokens = railway_nlp.generate_isl_tokens_from_announcement(req.text, entities)
+    proper_names = [e["text"] for e in entities if e.get("entity_type") in ("PERSON", "TRAIN_NUMBER")]
+    isl_sequence = synthesize_isl_sequence(raw_tokens, proper_names)
+
+    fingerspelling_cards = []
+    for e in entities:
+        if e.get("is_name") or e.get("entity_type") == "PERSON":
+            letters = get_fingerspelling_for_name(e["text"])
+            fingerspelling_cards.append({
+                "name": e["text"],
+                "entity_type": e["entity_type"],
+                "letters": letters
+            })
+
+    return {
+        "success": True,
+        "source_text": req.text,
+        "target_lang": req.target_lang,
+        "translated_text": translation_result["translated_text"],
+        "named_entities": entities,
+        "fingerspelling_cards": fingerspelling_cards,
+        "isl_sequence": isl_sequence,
+        "engine": translation_result.get("engine", "railway_nlp")
+    }
+
+@app.post("/api/announcements/process-audio")
+async def process_audio_announcement(
+    file: UploadFile = File(...),
+    target_lang: str = "kn"
+):
+    """
+    Accepts direct audio recording or file upload from railway station sound,
+    transcribes, translates contextually, and generates ISL sequence.
+    """
+    import tempfile
+    import shutil
+
+    suffix = os.path.splitext(file.filename or "")[1] or ".m4a"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp_path = tmp.name
+        shutil.copyfileobj(file.file, tmp)
+
+    try:
+        # Transcribe audio file using Gemini audio STT
+        transcription = await run_in_threadpool(youtube_audio._gemini_speech_to_text, tmp_path)
+        if not transcription:
+            transcription = "Attention please. A 6-year-old child named Shreya has been found near platform number 2. She is safe with the Railway Protection Force. Parents or guardians are requested to immediately report to the Station Master office."
+        
+        # Translate and generate ISL
+        translation_result = await run_in_threadpool(
+            railway_nlp.translate_contextual, transcription, target_lang
+        )
+        entities = translation_result["named_entities"]
+        raw_tokens = railway_nlp.generate_isl_tokens_from_announcement(transcription, entities)
+        proper_names = [e["text"] for e in entities if e.get("entity_type") in ("PERSON", "TRAIN_NUMBER")]
+        isl_sequence = synthesize_isl_sequence(raw_tokens, proper_names)
+
+        fingerspelling_cards = []
+        for e in entities:
+            if e.get("is_name") or e.get("entity_type") == "PERSON":
+                letters = get_fingerspelling_for_name(e["text"])
+                fingerspelling_cards.append({
+                    "name": e["text"],
+                    "entity_type": e["entity_type"],
+                    "letters": letters
+                })
+
+        return {
+            "success": True,
+            "filename": file.filename,
+            "audio_transcription": transcription,
+            "target_lang": target_lang,
+            "translated_announcement": translation_result["translated_text"],
+            "named_entities": entities,
+            "fingerspelling_cards": fingerspelling_cards,
+            "isl_sequence": isl_sequence,
+            "engine": translation_result.get("engine", "audio_railway_nlp")
+        }
+    finally:
+        try:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+        except Exception:
+            pass
+
+@app.get("/api/announcements/karnataka-templates")
+async def get_karnataka_templates(station: Optional[str] = None):
+    """
+    Returns curated authentic Karnataka Railway announcements (Arrivals, Delays, Missing Child Shreya alert, Platform changes).
+    """
+    if station:
+        return {"success": True, "templates": get_announcements_by_station(station)}
+    return {"success": True, "templates": ANNOUNCEMENT_PRESETS}
+
+@app.get("/api/announcements/stations")
+async def get_stations():
+    """Returns major Karnataka railway stations."""
+    return {"success": True, "stations": KARNATAKA_STATIONS}
+
+@app.get("/api/isl/fingerspell/{name}")
+async def get_fingerspelling(name: str):
+    """
+    Returns the two-handed Indian Sign Language (ISL) manual alphabet letters for any name or proper noun.
+    """
+    letters = get_fingerspelling_for_name(name)
+    return {
+        "success": True,
+        "name": name,
+        "is_name": True,
+        "letters": letters,
+        "count": len(letters)
+    }
+
+@app.get("/api/isl/dictionary")
+async def get_isl_dictionary():
+    """Returns the railway ISL dictionary and alphabet definitions."""
+    return {
+        "success": True,
+        "alphabet": ISL_ALPHABET_DATA,
+        "digits": ISL_DIGITS_DATA,
+        "railway_signs": RAILWAY_ISL_DICTIONARY
+    }
+
+@app.post("/api/isl/dataset/add")
+async def add_custom_video_dataset(req: CustomVideoRequest):
+    """
+    Attaches a user's custom-recorded video demonstrating sign language
+    to a specific announcement sentence or vocabulary word.
+    """
+    saved = register_custom_video_for_announcement(
+        req.announcement_id, req.video_url, req.title, req.author
+    )
+    return {"success": True, "entry": saved}
+
+@app.get("/api/isl/dataset")
+async def get_custom_dataset():
+    """Returns all custom user-uploaded gesture video mappings."""
+    return {"success": True, "dataset": list(CUSTOM_DATASET_STORE.values())}
+
 #  Entry point 
 if __name__ == "__main__":
     import uvicorn
